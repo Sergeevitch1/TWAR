@@ -233,15 +233,19 @@ def _fetch_profile_cached(steam_id: str, user: User | None) -> dict | None:
 
 @auth_bp.route('/login')
 def login_steam():
-    return_to = url_for('auth.login_callback', _external=True)
+    base_url = current_app.config.get('SITE_URL', 'https://twar.onrender.com')
+
+    return_to = f"{base_url}/auth/callback"
+
     params = {
         'openid.ns': 'http://specs.openid.net/auth/2.0',
         'openid.mode': 'checkid_setup',
         'openid.return_to': return_to,
-        'openid.realm': current_app.config.get('SITE_URL', request.host_url.rstrip('/')),
+        'openid.realm': base_url,
         'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select',
         'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select'
     }
+
     return redirect(f"https://steamcommunity.com/openid/login?{urlencode(params)}")
 
 
