@@ -234,7 +234,6 @@ def _fetch_profile_cached(steam_id: str, user: User | None) -> dict | None:
 @auth_bp.route('/login')
 def login_steam():
     base_url = current_app.config.get('SITE_URL', 'https://twar.onrender.com')
-
     return_to = f"{base_url}/auth/callback"
 
     params = {
