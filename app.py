@@ -219,7 +219,7 @@ def create_app():
         RolePermissionRecord.init_default_permissions()
     # ===================================
 
-        return app
+            return app
 
 # 👇 ГЛОБАЛЬНО (для gunicorn)
 app = create_app()
