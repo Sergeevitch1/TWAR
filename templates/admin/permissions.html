@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Управление правами | Админ-панель{% endblock %}
+
+{% block content %}
+<div class="admin-page-wrapper">
+    <div class="admin-page-header">
+        <div class="container">
+            <h1 class="page-title"><span class="title-icon">🛡️</span> Управление правами доступа</h1>
+            <p class="page-subtitle">Настройка прав для каждой роли</p>
+        </div>
+    </div>
+
+    <div class="container admin-page-content">
+        <div class="content-card">
+            <div class="card-header">
+                <h2 class="card-title">Выберите роль</h2>
+            </div>
+            <div class="card-body">
+                <div class="role-selector">
+                    {% for role_code in ['player', 'vip', 'jr_moderator', 'moderator', 'sr_forum_moderator', 'jr_admin', 'admin', 'sr_admin', 'main_admin', 's_owner', 'owner'] %}
+                    <a href="{{ url_for('admin.manage_permissions', role=role_code) }}" 
+                       class="role-btn {{ 'active' if selected_role == role_code else '' }}">
+                        {{ RANKS[role_code].icon }} {{ RANKS[role_code].name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" id="permissions-form">
+            <input type="hidden" name="role" value="{{ selected_role }}">
+            
+            {% for category_code, perms in permissions_by_category.items() %}
+            {% if perms %}
+            <div class="content-card permission-category">
+                <div class="card-header">
+                    <h3 class="card-title">{{ PermissionCategory[category_code.upper()].value[1] }}</h3>
+                    <button type="button" class="btn btn-sm btn-outline toggle-all" data-category="{{ category_code }}">Выбрать все</button>
+                </div>
+                <div class="card-body">
+                    <div class="permissions-grid">
+                        {% for perm in perms %}
+                        <label class="perm-checkbox {{ 'dangerous' if perm.dangerous else '' }}" title="{{ perm.description }}">
+                            <input type="checkbox" 
+                                   name="permissions[{{ perm.code }}]" 
+                                   value="1" 
+                                   {{ 'checked' if perm.granted else '' }}
+                                   {{ 'disabled' if selected_role == 'owner' else '' }}>
+                            <span class="perm-name">{{ perm.name }}</span>
+                            {% if perm.dangerous %}<span class="perm-warning">⚠️</span>{% endif %}
+                            {% if perm.default and not perm.granted %}<span class="perm-default">🔄</span>{% endif %}
+                            <small class="perm-desc">{{ perm.description }}</small>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">💾 Сохранить права</button>
+                <a href="{{ url_for('admin.manage_permissions') }}" class="btn btn-outline">↺ Сбросить к дефолту</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.role-selector { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+.role-btn { padding: 10px 20px; background: var(--bg-secondary); border: 2px solid var(--border-color); border-radius: 10px; color: var(--text-secondary); font-weight: 600; text-decoration: none; transition: all 0.2s; }
+.role-btn.active { background: var(--accent); border-color: var(--accent); color: #000; }
+.permissions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.perm-checkbox { display: flex; flex-direction: column; gap: 4px; padding: 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+.perm-checkbox:hover { border-color: var(--accent); }
+.perm-checkbox.dangerous { border-color: rgba(231, 76, 60, 0.5); background: rgba(231, 76, 60, 0.05); }
+.perm-checkbox input { width: 18px; height: 18px; accent-color: var(--accent); }
+.perm-name { font-weight: 600; color: var(--text-primary); }
+.perm-warning { color: #e74c3c; font-weight: bold; }
+.perm-default { color: #f1c40f; }
+.perm-desc { font-size: 0.8rem; color: var(--text-muted); }
+</style>
+
+<script>
+document.querySelectorAll('.toggle-all').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const grid = this.closest('.permission-category').querySelector('.permissions-grid');
+        const checkboxes = grid.querySelectorAll('input[type="checkbox"]:not(:disabled)');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        checkboxes.forEach(cb => cb.checked = !allChecked);
+    });
+});
+
+document.querySelectorAll('.perm-checkbox.dangerous input').forEach(cb => {
+    cb.addEventListener('change', function() {
+        if (this.checked) {
+            const name = this.closest('.perm-checkbox').querySelector('.perm-name').textContent;
+            if (!confirm(`⚠️ Вы уверены, что хотите выдать право "${name}"?\nЭто может быть опасно!`)) {
+                this.checked = false;
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

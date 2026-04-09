@@ -1,0 +1,698 @@
+{% extends 'base.html' %}
+
+{% block title %}Помощь | {{ Setting.get('forum_name', 'TW-FORUM') }}{% endblock %}
+
+{% block content %}
+<div class="help-page-wrapper">
+    
+    <!-- Шапка -->
+    <div class="help-header">
+        <div class="container">
+            <h1 class="page-title">
+                <span class="title-icon">❓</span>
+                Центр помощи
+            </h1>
+            <p class="page-subtitle">Ответы на частые вопросы и инструкции</p>
+            
+            <!-- Поиск по помощи -->
+            <div class="help-search">
+                <input type="text" id="helpSearch" class="search-input" placeholder="🔍 Найти ответ на вопрос...">
+                <button class="search-btn" onclick="searchHelp()">Найти</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container help-content">
+        
+        <!-- Категории помощи -->
+        <div class="help-categories">
+            <button class="category-btn active" data-category="all">📚 Все статьи</button>
+            <button class="category-btn" data-category="account">👤 Аккаунт</button>
+            <button class="category-btn" data-category="forum">💬 Форум</button>
+            <button class="category-btn" data-category="technical">⚙️ Техническое</button>
+            <button class="category-btn" data-category="rules">📜 Правила</button>
+        </div>
+
+        <!-- Статьи помощи -->
+        <div class="help-articles">
+            
+            <!-- 🔹 Аккаунт -->
+            <article class="help-article" data-category="account" data-tags="вход,регистрация,пароль,профиль">
+                <div class="article-header">
+                    <span class="article-icon">🔑</span>
+                    <h3>Как войти через Steam?</h3>
+                </div>
+                <div class="article-body">
+                    <p>Для входа на форум используется авторизация через Steam:</p>
+                    <ol>
+                        <li>Нажмите кнопку <strong>"Войти через Steam"</strong> в шапке сайта</li>
+                        <li>Подтвердите вход в открывшемся окне Steam</li>
+                        <li>После успешной авторизации вы будете перенаправлены на форум</li>
+                    </ol>
+                    <div class="article-note">
+                        💡 <strong>Совет:</strong> Убедитесь, что ваш Steam-профиль не приватный, иначе аватар может не загрузиться.
+                    </div>
+                </div>
+            </article>
+
+            <article class="help-article" data-category="account" data-tags="роль,флаг,статус,права">
+                <div class="article-header">
+                    <span class="article-icon">🎭</span>
+                    <h3>Что означают роли и флаги?</h3>
+                </div>
+                <div class="article-body">
+                    <p><strong>Роли</strong> определяют ваши права на форуме:</p>
+                    <ul class="role-list">
+                        <li><span class="role-badge player">👤 Игрок</span> — базовые права: чтение, создание тем, ответы</li>
+                        <li><span class="role-badge vip">⭐ VIP</span> — обход капчи, закрепление своих тем</li>
+                        <li><span class="role-badge moderator">⚔️ Модератор</span> — удаление постов, предупреждения, баны</li>
+                        <li><span class="role-badge admin">🔶 Администратор</span> — полный контроль над контентом</li>
+                    </ul>
+                    
+                    <p><strong>Флаги</strong> — дополнительные значки за заслуги:</p>
+                    <ul class="flag-list">
+                        <li><span class="flag-item">💎 Донатер</span> — поддержка форума</li>
+                        <li><span class="flag-item">🎖️ Ветеран</span> — более 1 года на форуме</li>
+                        <li><span class="flag-item">🐛 Баг-хантер</span> — найденные критические баги</li>
+                        <li><span class="flag-item">🏆 Чемпион</span> — победа в турнире</li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="help-article" data-category="account" data-tags="бан,разбан,жалоба,модерация">
+                <div class="article-header">
+                    <span class="article-icon">⚖️</span>
+                    <h3>Что делать, если меня забанили?</h3>
+                </div>
+                <div class="article-body">
+                    <p>Если вы получили бан:</p>
+                    <ol>
+                        <li>Проверьте причину в своём профиле или при попытке входа</li>
+                        <li>Если бан временный — дождитесь его окончания</li>
+                        <li>Если вы не согласны с баном — напишите апелляцию в <a href="#">Discord</a> или создайте тему в разделе <a href="#">"Апелляции"</a></li>
+                    </ol>
+                    <div class="article-warning">
+                        ⚠️ <strong>Важно:</strong> Оскорбления модераторов в апелляции только ухудшат ситуацию.
+                    </div>
+                </div>
+            </article>
+
+            <!-- 🔹 Форум -->
+            <article class="help-article" data-category="forum" data-tags="тема,пост,редактирование,удаление">
+                <div class="article-header">
+                    <span class="article-icon">📝</span>
+                    <h3>Как создать тему или ответить?</h3>
+                </div>
+                <div class="article-body">
+                    <p><strong>Создание темы:</strong></p>
+                    <ol>
+                        <li>Перейдите в нужный раздел форума</li>
+                        <li>Нажмите кнопку <strong>"+ Новая тема"</strong></li>
+                        <li>Введите заголовок и текст сообщения</li>
+                        <li>Используйте панель форматирования для оформления</li>
+                        <li>Нажмите "Опубликовать"</li>
+                    </ol>
+                    
+                    <p><strong>Ответ в теме:</strong></p>
+                    <ol>
+                        <li>Откройте тему</li>
+                        <li>Прокрутите вниз до формы ответа</li>
+                        <li>Напишите сообщение и нажмите "Отправить"</li>
+                    </ol>
+                    
+                    <div class="article-tip">
+                        💡 <strong>Форматирование:</strong> Используйте <code>**жирный**</code>, <code>*курсив*</code>, <code>```код```</code> для оформления.
+                    </div>
+                </div>
+            </article>
+
+            <article class="help-article" data-category="forum" data-tags="цитата,упоминание,уведомление">
+                <div class="article-header">
+                    <span class="article-icon">🔔</span>
+                    <h3>Как работают уведомления?</h3>
+                </div>
+                <div class="article-body">
+                    <p>Вы получите уведомление, если:</p>
+                    <ul>
+                        <li>💬 Кто-то ответил в теме, где вы участвуете</li>
+                        <li>@ Вас упомянули через <code>@никнейм</code></li>
+                        <li>❤️ Ваш пост лайкнули</li>
+                        <li>👑 Администрация отправила вам сообщение</li>
+                    </ul>
+                    
+                    <p><strong>Управление уведомлениями:</strong></p>
+                    <ol>
+                        <li>Перейдите в <a href="{{ url_for('user.settings') }}">Настройки</a> → Уведомления</li>
+                        <li>Выберите, о каких событиях хотите получать оповещения</li>
+                        <li>Настройте способ получения: на сайте / email</li>
+                    </ol>
+                </div>
+            </article>
+
+            <!-- 🔹 Техническое -->
+            <article class="help-article" data-category="technical" data-tags="ошибка,баг,сообщить,поддержка">
+                <div class="article-header">
+                    <span class="article-icon">🐛</span>
+                    <h3>Как сообщить об ошибке?</h3>
+                </div>
+                <div class="article-body">
+                    <p>Нашли баг? Помогите нам его исправить:</p>
+                    <ol>
+                        <li>Опишите проблему максимально подробно</li>
+                        <li>Укажите шаги для воспроизведения</li>
+                        <li>Приложите скриншоты или логи ошибок (F12 → Console)</li>
+                        <li>Укажите браузер и ОС</li>
+                        <li>Создайте тему в разделе <a href="#">"Баги и ошибки"</a> или напишите в <a href="#">Discord</a></li>
+                    </ol>
+                    <div class="article-note">
+                        🏆 За найденные критические баги выдаётся флаг <strong>🐛 Баг-хантер</strong>!
+                    </div>
+                </div>
+            </article>
+
+            <article class="help-article" data-category="technical" data-tags="браузер,кэш,cookie,проблемы">
+                <div class="article-header">
+                    <span class="article-icon">🔄</span>
+                    <h3>Сайт не работает / не грузится</h3>
+                </div>
+                <div class="article-body">
+                    <p>Попробуйте следующие шаги:</p>
+                    <ol>
+                        <li><strong>Обновите страницу</strong> (Ctrl+F5 для полной перезагрузки)</li>
+                        <li><strong>Очистите кэш браузера</strong>:
+                            <ul>
+                                <li>Chrome/Edge: Ctrl+Shift+Del → "Кэшированные изображения и файлы"</li>
+                                <li>Firefox: Ctrl+Shift+Del → "Кэш"</li>
+                            </ul>
+                        </li>
+                        <li><strong>Проверьте cookie</strong> — разрешите их для этого сайта</li>
+                        <li><strong>Попробуйте другой браузер</strong> или режим инкогнито</li>
+                        <li><strong>Проверьте соединение</strong> — возможно, проблема в интернете</li>
+                    </ol>
+                    <p>Если ничего не помогло — <a href="#">напишите в поддержку</a>.</p>
+                </div>
+            </article>
+
+            <!-- 🔹 Правила -->
+            <article class="help-article" data-category="rules" data-tags="правила,нарушение,санкции,модерация">
+                <div class="article-header">
+                    <span class="article-icon">📜</span>
+                    <h3>Основные правила форума</h3>
+                </div>
+                <div class="article-body">
+                    <div class="rules-list">
+                        <div class="rule-item">
+                            <span class="rule-number">1</span>
+                            <p><strong>Уважайте других</strong> — оскорбления, троллинг и провокации запрещены</p>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-number">2</span>
+                            <p><strong>Без спама</strong> — реклама, флуд и оффтоп удаляются</p>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-number">3</span>
+                            <p><strong>Правильные разделы</strong> — создавайте темы в соответствующих разделах</p>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-number">4</span>
+                            <p><strong>Без читов и чит-кодов</strong> — обсуждение читов запрещено</p>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-number">5</span>
+                            <p><strong>Слушайте модераторов</strong> — их решения окончательны</p>
+                        </div>
+                    </div>
+                    <p class="rules-footer">
+                        📖 Полные правила: <a href="#">Читать здесь</a>
+                    </p>
+                </div>
+            </article>
+
+            <!-- Нет результатов поиска -->
+            <div id="noResults" class="help-article hidden">
+                <div class="article-body">
+                    <p>😕 Ничего не найдено по вашему запросу.</p>
+                    <p>Попробуйте:</p>
+                    <ul>
+                        <li>Использовать другие ключевые слова</li>
+                        <li>Выбрать категорию вручную</li>
+                        <li><a href="#">Задать вопрос в поддержке</a></li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Ещё нужна помощь? -->
+        <div class="help-footer">
+            <h3>Не нашли ответ?</h3>
+            <p>Напишите нам — мы поможем!</p>
+            <div class="contact-buttons">
+                <a href="#" class="btn btn-outline">💬 Discord</a>
+                <a href="#" class="btn btn-outline">📧 Email</a>
+                <a href="{{ url_for('forum.index') }}" class="btn btn-primary">📝 Создать тему</a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+/* ==========================================
+   СТИЛИ СТРАНИЦЫ ПОМОЩИ
+   ========================================== */
+
+.help-page-wrapper {
+    min-height: 100vh;
+    background: var(--bg-primary);
+    padding-bottom: 60px;
+}
+
+/* Шапка */
+.help-header {
+    background: linear-gradient(135deg, var(--accent-dim) 0%, var(--bg-secondary) 100%);
+    border-bottom: 1px solid var(--border-color);
+    padding: 40px 0;
+    margin-bottom: 32px;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0 0 8px 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.title-icon { font-size: 2.2rem; }
+
+.page-subtitle {
+    margin: 0 0 24px 0;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+/* Поиск */
+.help-search {
+    display: flex;
+    gap: 12px;
+    max-width: 600px;
+}
+
+.search-input {
+    flex: 1;
+    padding: 14px 20px;
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.search-btn {
+    padding: 14px 24px;
+    background: var(--accent);
+    border: none;
+    border-radius: 12px;
+    color: #000;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.search-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(var(--accent-rgb, 231, 76, 60), 0.3);
+}
+
+/* Категории */
+.help-categories {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+}
+
+.category-btn {
+    padding: 10px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 50px;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.category-btn:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+.category-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+}
+
+/* Статьи */
+.help-articles {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.help-article {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.help-article:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+.help-article.hidden {
+    display: none;
+}
+
+.article-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 24px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+}
+
+.article-icon {
+    font-size: 1.5rem;
+}
+
+.article-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.article-body {
+    padding: 24px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.article-body p {
+    margin: 0 0 12px 0;
+}
+
+.article-body p:last-child {
+    margin-bottom: 0;
+}
+
+.article-body ol, .article-body ul {
+    margin: 12px 0;
+    padding-left: 24px;
+}
+
+.article-body li {
+    margin-bottom: 6px;
+}
+
+.article-body a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.article-body a:hover {
+    text-decoration: underline;
+}
+
+.article-note, .article-tip, .article-warning {
+    margin-top: 16px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+}
+
+.article-note {
+    background: rgba(52, 152, 219, 0.1);
+    border-left: 3px solid #3498db;
+}
+
+.article-tip {
+    background: rgba(46, 204, 113, 0.1);
+    border-left: 3px solid #2ecc71;
+}
+
+.article-warning {
+    background: rgba(241, 196, 15, 0.1);
+    border-left: 3px solid #f1c40f;
+}
+
+/* Списки ролей и флагов */
+.role-list, .flag-list {
+    list-style: none;
+    padding: 0;
+    margin: 12px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.role-badge, .flag-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.role-badge.player { color: #95a5a6; }
+.role-badge.vip { color: #d4af37; }
+.role-badge.moderator { color: #2ecc71; }
+.role-badge.admin { color: #2980b9; }
+
+.flag-item { color: var(--text-primary); }
+
+/* Правила */
+.rules-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.rule-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+}
+
+.rule-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    background: var(--accent);
+    color: #000;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.rule-item p {
+    margin: 0 !important;
+}
+
+.rules-footer {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Футер помощи */
+.help-footer {
+    margin-top: 48px;
+    padding: 32px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    text-align: center;
+}
+
+.help-footer h3 {
+    margin: 0 0 8px 0;
+    color: var(--text-primary);
+}
+
+.help-footer p {
+    margin: 0 0 20px 0;
+    color: var(--text-muted);
+}
+
+.contact-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-outline {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+.btn-outline:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+    border-color: var(--accent);
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: #000;
+}
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(var(--accent-rgb, 231, 76, 60), 0.3);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .help-search {
+        flex-direction: column;
+    }
+    
+    .help-categories {
+        justify-content: center;
+    }
+    
+    .article-header {
+        padding: 16px 20px;
+    }
+    
+    .article-body {
+        padding: 20px;
+    }
+    
+    .contact-buttons {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+// ==========================================
+// ПОИСК И ФИЛЬТРАЦИЯ ПОМОЩИ
+// ==========================================
+
+// Фильтрация по категориям
+document.querySelectorAll('.category-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        // Убираем активный класс со всех
+        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        const category = this.dataset.category;
+        filterArticles(category, document.getElementById('helpSearch').value);
+    });
+});
+
+// Поиск
+function searchHelp() {
+    const query = document.getElementById('helpSearch').value.toLowerCase().trim();
+    const activeCategory = document.querySelector('.category-btn.active').dataset.category;
+    filterArticles(activeCategory, query);
+}
+
+// Поиск по Enter
+document.getElementById('helpSearch').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') searchHelp();
+});
+
+// Фильтрация статей
+function filterArticles(category, searchQuery) {
+    const articles = document.querySelectorAll('.help-article[data-category]');
+    const noResults = document.getElementById('noResults');
+    let visibleCount = 0;
+    
+    articles.forEach(article => {
+        if (article.id === 'noResults') return;
+        
+        const articleCategory = article.dataset.category;
+        const articleTags = (article.dataset.tags || '').toLowerCase();
+        const articleText = article.textContent.toLowerCase();
+        
+        // Проверка категории
+        const categoryMatch = category === 'all' || articleCategory === category;
+        
+        // Проверка поиска
+        const searchMatch = !searchQuery || 
+                           articleTags.includes(searchQuery) || 
+                           articleText.includes(searchQuery);
+        
+        if (categoryMatch && searchMatch) {
+            article.classList.remove('hidden');
+            visibleCount++;
+        } else {
+            article.classList.add('hidden');
+        }
+    });
+    
+    // Показать "ничего не найдено"
+    if (visibleCount === 0) {
+        noResults.classList.remove('hidden');
+    } else {
+        noResults.classList.add('hidden');
+    }
+}
+
+// Аккордеон для статей (опционально)
+document.querySelectorAll('.article-header').forEach(header => {
+    header.addEventListener('click', function() {
+        const article = this.closest('.help-article');
+        article.classList.toggle('expanded');
+    });
+});
+</script>
+{% endblock %}

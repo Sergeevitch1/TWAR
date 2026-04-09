@@ -1,0 +1,1153 @@
+{% extends 'base.html' %}
+
+{% block title %}Пользователи | Админ-панель{% endblock %}
+
+{% block content %}
+<div class="admin-page-wrapper">
+    
+    <!-- Шапка -->
+    <div class="admin-page-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1 class="page-title">
+                        <span class="title-icon">👥</span>
+                        Управление пользователями
+                    </h1>
+                    <p class="page-subtitle">Поиск, фильтрация и модерация</p>
+                </div>
+                <div class="header-stats">
+                    <div class="stat-pill">
+                        <span class="stat-icon">👤</span>
+                        <span class="stat-value">{{ pagination.total }}</span>
+                        <span class="stat-label">пользователей</span>
+                    </div>
+                    {% if search or role_filter %}
+                    <div class="stat-pill filter-active">
+                        <span class="stat-icon">🔍</span>
+                        <span class="stat-label">Фильтры активны</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Навигация -->
+            <nav class="admin-breadcrumb">
+                <a href="{{ url_for('admin.dashboard') }}" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    <span>Дашборд</span>
+                </a>
+                <a href="{{ url_for('admin.users') }}" class="nav-item active">
+                    <span class="nav-icon">👥</span>
+                    <span>Пользователи</span>
+                </a>
+                <a href="{{ url_for('admin.topics') }}" class="nav-item">
+                    <span class="nav-icon">📝</span>
+                    <span>Темы</span>
+                </a>
+                <a href="{{ url_for('admin.logs') }}" class="nav-item">
+                    <span class="nav-icon">📜</span>
+                    <span>Логи</span>
+                </a>
+                <a href="{{ url_for('admin.settings') }}" class="nav-item">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Настройки</span>
+                </a>
+                <div class="nav-divider"></div>
+                <a href="{{ url_for('core.index') }}" class="nav-item nav-secondary">
+                    <span class="nav-icon">←</span>
+                    <span>На сайт</span>
+                </a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Основной контент -->
+    <div class="container admin-page-content">
+        
+        <!-- Фильтры и поиск -->
+        <div class="content-card filters-card">
+            <form method="GET" class="filters-form">
+                <div class="filters-grid">
+                    <div class="filter-group search-group">
+                        <label class="filter-label">
+                            <span class="label-icon">🔍</span>
+                            <span>Поиск</span>
+                        </label>
+                        <div class="input-with-icon">
+                            <input type="text" name="search" value="{{ search or '' }}" 
+                                   placeholder="Никнейм или Steam ID..." class="form-input">
+                            <span class="input-icon">👤</span>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <span class="label-icon">🎭</span>
+                            <span>Роль</span>
+                        </label>
+                        <div class="select-wrapper">
+                            <select name="role" class="form-select">
+                                <option value="">Все роли</option>
+                                {% for code, rank in roles.items() %}
+                                <option value="{{ code }}" {{ 'selected' if role_filter == code else '' }}>
+                                    {{ rank.icon }} {{ rank.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <span class="select-arrow">▼</span>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-actions">
+                        <button type="submit" class="btn btn-primary btn-search">
+                            <span class="btn-icon">🔎</span>
+                            <span>Найти</span>
+                        </button>
+                        {% if search or role_filter %}
+                        <a href="{{ url_for('admin.users') }}" class="btn btn-outline">
+                            <span class="btn-icon">✕</span>
+                            <span>Сброс</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Таблица пользователей -->
+        <div class="content-card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <span class="title-icon">📋</span>
+                    Список пользователей
+                    <span class="count-badge">{{ pagination.total }}</span>
+                </h2>
+                <div class="card-info">
+                    <span class="page-indicator">
+                        Страница <strong>{{ pagination.page }}</strong> из {{ pagination.pages }}
+                    </span>
+                </div>
+            </div>
+            
+            {% if users %}
+            <div class="table-container">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th class="col-user">Пользователь</th>
+                            <th class="col-steam">Steam ID</th>
+                            <th class="col-role">Роль</th>
+                            <th class="col-date">Регистрация</th>
+                            <th class="col-date">Последний вход</th>
+                            <th class="col-status">Статус</th>
+                            <th class="col-actions">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr class="user-row {{ 'banned' if user.is_banned else '' }} {{ 'online' if (datetime.utcnow() - user.last_login).total_seconds() < 900 else '' }}">
+                            <td class="cell-user">
+                                <div class="user-card">
+                                    <div class="user-avatar-wrapper">
+                                        <img src="{{ user.avatar or 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg' }}" 
+                                             alt="{{ user.username }}" class="user-avatar">
+                                        {% if (datetime.utcnow() - user.last_login).total_seconds() < 900 %}
+                                        <span class="online-indicator"></span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="user-details">
+                                        <div class="user-name">{{ user.username }}</div>
+                                        {% if user.custom_title %}
+                                        <div class="user-title">{{ user.custom_title }}</div>
+                                        {% endif %}
+                                        {% if user.is_banned %}
+                                        <div class="user-ban-reason">⛔ {{ user.ban_reason or 'Забанен' }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="cell-steam">
+                                <code class="steam-id">{{ user.steam_id }}</code>
+                            </td>
+                            <td class="cell-role">
+                                <span class="role-badge {{ user.role }}" title="{{ roles[user.role].name }}">
+                                    <span class="badge-icon">{{ roles[user.role].icon }}</span>
+                                    <span class="badge-text">{{ user.role }}</span>
+                                </span>
+                            </td>
+                            <td class="cell-date">
+                                <div class="date-cell">
+                                    <div class="date-main">{{ user.created_at.strftime('%d.%m.%Y') }}</div>
+                                </div>
+                            </td>
+                            <td class="cell-date">
+                                <div class="date-cell">
+                                    <div class="date-main">{{ user.last_login.strftime('%d.%m') }}</div>
+                                    <div class="date-time">{{ user.last_login.strftime('%H:%M') }}</div>
+                                </div>
+                            </td>
+                            <td class="cell-status">
+                                {% if user.is_banned %}
+                                <span class="status-badge banned">
+                                    <span class="badge-icon">⛔</span>
+                                    <span class="badge-text">Забанен</span>
+                                </span>
+                                {% elif (datetime.utcnow() - user.last_login).total_seconds() < 900 %}
+                                <span class="status-badge online">
+                                    <span class="badge-dot"></span>
+                                    <span class="badge-text">Онлайн</span>
+                                </span>
+                                {% else %}
+                                <span class="status-badge offline">
+                                    <span class="badge-dot"></span>
+                                    <span class="badge-text">Оффлайн</span>
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="cell-actions">
+                                <div class="action-buttons">
+                                    <a href="{{ url_for('user.profile', username=user.username) }}" 
+                                       class="btn-action view" title="Профиль" target="_blank">
+                                        <span class="btn-icon">👁️</span>
+                                    </a>
+                                    
+                                    <a href="{{ url_for('admin.user_edit', user_id=user.id) }}" 
+                                       class="btn-action edit" title="Редактировать">
+                                        <span class="btn-icon">✏️</span>
+                                    </a>
+                                    
+                                    {% if user.is_banned %}
+                                    <form method="POST" action="{{ url_for('admin.user_unban', user_id=user.id) }}" 
+                                          class="inline-form">
+                                        <button type="submit" class="btn-action unban" 
+                                                title="Разбанить"
+                                                onclick="return confirm('Разбанить пользователя {{ user.username }}?')">
+                                            <span class="btn-icon">✅</span>
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                    <form method="POST" action="{{ url_for('admin.user_ban', user_id=user.id) }}" 
+                                          class="inline-form">
+                                        <button type="submit" class="btn-action ban" 
+                                                title="Забанить"
+                                                onclick="return confirm('Забанить пользователя {{ user.username }}?')">
+                                            <span class="btn-icon">🔨</span>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Пагинация -->
+            {% if pagination.pages > 1 %}
+            <div class="pagination-wrapper">
+                <div class="pagination">
+                    {% if pagination.has_prev %}
+                    <a href="{{ url_for('admin.users', page=pagination.prev_num, search=search, role=role_filter) }}" 
+                       class="pagination-btn prev">
+                        <span>←</span> Назад
+                    </a>
+                    {% endif %}
+                    
+                    <div class="pagination-numbers">
+                        {% for page_num in pagination.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != pagination.page %}
+                                <a href="{{ url_for('admin.users', page=page_num, search=search, role=role_filter) }}" 
+                                   class="pagination-number">{{ page_num }}</a>
+                                {% else %}
+                                <span class="pagination-number active">{{ page_num }}</span>
+                                {% endif %}
+                            {% else %}
+                            <span class="pagination-ellipsis">…</span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    
+                    {% if pagination.has_next %}
+                    <a href="{{ url_for('admin.users', page=pagination.next_num, search=search, role=role_filter) }}" 
+                       class="pagination-btn next">
+                        Вперёд <span>→</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <!-- Пустое состояние -->
+            <div class="empty-state-wrapper">
+                <div class="empty-state">
+                    <div class="empty-icon">🔍</div>
+                    <h3 class="empty-title">Пользователи не найдены</h3>
+                    <p class="empty-text">
+                        {% if search or role_filter %}
+                        По вашему запросу ничего не найдено. Попробуйте изменить параметры поиска.
+                        {% else %}
+                        В системе пока нет зарегистрированных пользователей.
+                        {% endif %}
+                    </p>
+                    {% if search or role_filter %}
+                    <a href="{{ url_for('admin.users') }}" class="btn btn-primary">
+                        <span class="btn-icon">✕</span>
+                        Сбросить фильтры
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+/* ==========================================
+   СОВРЕМЕННЫЙ СТИЛЬ СТРАНИЦЫ ПОЛЬЗОВАТЕЛЕЙ
+   ========================================== */
+
+/* Шапка (как в topics.html) */
+.admin-page-header {
+    background: linear-gradient(135deg, var(--accent-dim) 0%, var(--bg-secondary) 100%);
+    border-bottom: 1px solid var(--border-color);
+    padding: 40px 0 30px;
+    margin-bottom: 32px;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.header-left {
+    flex: 1;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0 0 8px 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.title-icon {
+    font-size: 2.2rem;
+}
+
+.page-subtitle {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.header-stats {
+    display: flex;
+    gap: 12px;
+}
+
+.stat-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 50px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.stat-pill.filter-active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+}
+
+.stat-icon {
+    font-size: 1.2rem;
+}
+
+.stat-value {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--accent);
+}
+
+.stat-pill.filter-active .stat-value {
+    color: #000;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.stat-pill.filter-active .stat-label {
+    color: #000;
+}
+
+/* Навигация */
+.admin-breadcrumb {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.nav-item:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+    transform: translateY(-2px);
+}
+
+.nav-item.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+}
+
+.nav-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border-color);
+    margin: 0 8px;
+}
+
+.nav-secondary {
+    margin-left: auto;
+}
+
+/* Контент */
+.admin-page-content {
+    max-width: 1400px;
+}
+
+.content-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+    margin-bottom: 24px;
+}
+
+/* Карточка фильтров */
+.filters-card {
+    padding: 24px 32px;
+}
+
+.filters-form {
+    width: 100%;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 250px auto;
+    gap: 20px;
+    align-items: end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.label-icon {
+    font-size: 1rem;
+}
+
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon .form-input {
+    width: 100%;
+    padding: 12px 44px 12px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.input-with-icon .form-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.input-icon {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.1rem;
+    opacity: 0.5;
+}
+
+.select-wrapper {
+    position: relative;
+}
+
+.form-select {
+    width: 100%;
+    padding: 12px 44px 12px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    appearance: none;
+}
+
+.form-select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.select-arrow {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: #000;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(var(--accent-rgb, 231, 76, 60), 0.3);
+}
+
+.btn-outline {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.btn-outline:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+    border-color: var(--accent);
+}
+
+.btn-icon {
+    font-size: 1.1rem;
+}
+
+/* Заголовок карточки */
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.card-title {
+    font-size: 1.3rem;
+    margin: 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 10px;
+    background: var(--accent);
+    color: #000;
+    border-radius: 50px;
+    font-weight: 800;
+    font-size: 0.9rem;
+}
+
+.card-info {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.page-indicator {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.page-indicator strong {
+    color: var(--text-primary);
+}
+
+/* Таблица */
+.table-container {
+    overflow-x: auto;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table thead {
+    background: var(--bg-secondary);
+}
+
+.modern-table th {
+    padding: 16px 20px;
+    text-align: left;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.modern-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.modern-table tbody tr:hover {
+    background: var(--bg-secondary);
+    transform: translateX(4px);
+}
+
+.modern-table tbody tr.banned {
+    background: rgba(231, 76, 60, 0.05);
+    opacity: 0.7;
+}
+
+.modern-table tbody tr.online:hover {
+    box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.2);
+}
+
+.modern-table td {
+    padding: 16px 20px;
+    vertical-align: middle;
+}
+
+/* Ячейка пользователя */
+.cell-user {
+    min-width: 280px;
+}
+
+.user-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.user-avatar-wrapper {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border-color);
+}
+
+.online-indicator {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    background: #2ecc71;
+    border: 2px solid var(--bg-card);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(0.9); }
+}
+
+.user-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.user-name {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+}
+
+.user-title {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.user-ban-reason {
+    font-size: 0.8rem;
+    color: #e74c3c;
+    font-weight: 600;
+}
+
+/* Steam ID */
+.cell-steam {
+    min-width: 180px;
+}
+
+.steam-id {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    background: var(--bg-secondary);
+    padding: 6px 12px;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+/* Роль */
+.cell-role {
+    min-width: 140px;
+}
+
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.role-badge.owner { 
+    background: rgba(255, 215, 0, 0.2); 
+    color: #ffd700;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.role-badge.admin { 
+    background: rgba(41, 128, 185, 0.2); 
+    color: #2980b9;
+    border: 1px solid rgba(41, 128, 185, 0.3);
+}
+
+.role-badge.moderator { 
+    background: rgba(46, 204, 113, 0.2); 
+    color: #2ecc71;
+    border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.role-badge.player { 
+    background: var(--bg-secondary); 
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.badge-icon {
+    font-size: 1rem;
+}
+
+/* Даты */
+.cell-date {
+    min-width: 120px;
+}
+
+.date-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.date-main {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.date-time {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* Статус */
+.cell-status {
+    min-width: 140px;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.status-badge.online {
+    background: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
+    border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.status-badge.offline {
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+}
+
+.status-badge.banned {
+    background: rgba(231, 76, 60, 0.15);
+    color: #e74c3c;
+    border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+.badge-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.status-badge.online .badge-dot {
+    background: #2ecc71;
+    animation: pulse 2s infinite;
+}
+
+.status-badge.offline .badge-dot {
+    background: var(--text-muted);
+}
+
+/* Кнопки действий */
+.cell-actions {
+    min-width: 180px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.btn-action {
+    width: 38px;
+    height: 38px;
+    border: none;
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.btn-action.view:hover {
+    background: #3498db;
+    color: #fff;
+}
+
+.btn-action.edit:hover {
+    background: #f39c12;
+    color: #fff;
+}
+
+.btn-action.ban:hover {
+    background: #e74c3c;
+    color: #fff;
+}
+
+.btn-action.unban:hover {
+    background: #2ecc71;
+    color: #fff;
+}
+
+/* Пустое состояние */
+.empty-state-wrapper {
+    padding: 80px 40px;
+}
+
+.empty-state {
+    text-align: center;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.empty-icon {
+    font-size: 5rem;
+    margin-bottom: 24px;
+    opacity: 0.5;
+}
+
+.empty-title {
+    font-size: 1.5rem;
+    margin: 0 0 12px 0;
+    color: var(--text-primary);
+}
+
+.empty-text {
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin: 0 0 32px 0;
+}
+
+/* Пагинация */
+.pagination-wrapper {
+    padding: 24px 32px;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+.pagination-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.pagination-btn:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+    transform: translateY(-2px);
+}
+
+.pagination-numbers {
+    display: flex;
+    gap: 6px;
+}
+
+.pagination-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.pagination-number:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+.pagination-number.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+}
+
+.pagination-ellipsis {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    color: var(--text-muted);
+}
+
+/* Адаптивность */
+@media (max-width: 1200px) {
+    .header-content {
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .header-stats {
+        align-self: flex-end;
+    }
+    
+    .filters-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-actions {
+        width: 100%;
+    }
+    
+    .filter-actions .btn {
+        flex: 1;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 1024px) {
+    .admin-breadcrumb {
+        justify-content: center;
+    }
+    
+    .nav-secondary {
+        margin-left: 0;
+    }
+    
+    .modern-table th,
+    .modern-table td {
+        padding: 12px 16px;
+    }
+    
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-page-header {
+        padding: 30px 0 20px;
+    }
+    
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .card-header {
+        padding: 20px 24px;
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+    }
+    
+    .modern-table thead {
+        display: none;
+    }
+    
+    .modern-table tbody tr {
+        display: block;
+        margin-bottom: 16px;
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+    }
+    
+    .modern-table tbody td {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border: none;
+        border-bottom: 1px dashed var(--border-color);
+    }
+    
+    .modern-table tbody td:last-child {
+        border-bottom: none;
+    }
+    
+    .modern-table tbody td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        font-size: 0.8rem;
+    }
+    
+    .action-buttons {
+        justify-content: center;
+    }
+    
+    .pagination {
+        flex-wrap: wrap;
+    }
+}
+</style>
+{% endblock %}

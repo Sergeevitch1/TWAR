@@ -1,0 +1,1099 @@
+{% extends 'base.html' %}
+
+{% block title %}Настройки | Профиль{% endblock %}
+
+{% block content %}
+<div class="settings-page-ultimate">
+    
+    <!-- Заголовок -->
+    <div class="settings-header">
+        <div class="container">
+            <nav class="breadcrumb">
+                <a href="{{ url_for('user.my_profile') }}">Мой профиль</a>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-current">Настройки</span>
+            </nav>
+            <h1>⚙️ Настройки аккаунта</h1>
+            <p class="settings-subtitle">Управляйте профилем, безопасностью и предпочтениями</p>
+        </div>
+    </div>
+
+    <div class="container settings-main-grid">
+        
+        <!-- Боковое меню -->
+        <div class="settings-sidebar">
+            <nav class="settings-tabs">
+                <a href="#tab-profile" class="settings-tab active" onclick="switchSettingsTab('profile')">
+                    <span class="tab-icon">👤</span>
+                    <span>Профиль</span>
+                </a>
+                <a href="#tab-appearance" class="settings-tab" onclick="switchSettingsTab('appearance')">
+                    <span class="tab-icon">🎨</span>
+                    <span>Внешний вид</span>
+                </a>
+                <a href="#tab-notifications" class="settings-tab" onclick="switchSettingsTab('notifications')">
+                    <span class="tab-icon">🔔</span>
+                    <span>Уведомления</span>
+                </a>
+                <a href="#tab-privacy" class="settings-tab" onclick="switchSettingsTab('privacy')">
+                    <span class="tab-icon">🔒</span>
+                    <span>Приватность</span>
+                </a>
+                <a href="#tab-security" class="settings-tab" onclick="switchSettingsTab('security')">
+                    <span class="tab-icon">🛡️</span>
+                    <span>Безопасность</span>
+                </a>
+                <a href="#tab-danger" class="settings-tab danger" onclick="switchSettingsTab('danger')">
+                    <span class="tab-icon">⚠️</span>
+                    <span>Опасная зона</span>
+                </a>
+            </nav>
+
+            <!-- Быстрая инфа -->
+            <div class="sidebar-info-card">
+                <h4>📊 Информация</h4>
+                <div class="info-row">
+                    <span class="info-label">Steam ID:</span>
+                    <span class="info-value">{{ current_user.steam_id }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Регистрация:</span>
+                    <span class="info-value">{{ current_user.created_at.strftime('%d.%m.%Y') }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Последний вход:</span>
+                    <span class="info-value">{{ current_user.last_login.strftime('%d.%m.%Y %H:%M') }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Основной контент -->
+        <div class="settings-content">
+            
+            <!-- Вкладка: Профиль -->
+            <div id="tab-profile" class="settings-tab-panel active">
+                <div class="settings-section">
+                    <h2 class="section-title">👤 Основная информация</h2>
+                    
+                    <form method="POST" action="{{ url_for('user.settings') }}" class="settings-form" enctype="multipart/form-data">
+                        
+                        <!-- Аватар -->
+                        <div class="form-section">
+                            <h3 class="section-subtitle">🖼️ Аватар</h3>
+                            <div class="avatar-settings">
+                                <div class="current-avatar">
+                                    <img src="{{ current_user.avatar }}" alt="Current avatar" class="avatar-preview" onerror="this.src='https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg'">
+                                    <div class="avatar-overlay">
+                                        <span>Текущий аватар</span>
+                                    </div>
+                                </div>
+                                <div class="avatar-upload-options">
+                                    <div class="form-group">
+                                        <label for="avatar_url">URL аватара</label>
+                                        <input type="url" id="avatar_url" name="avatar_url" 
+                                               value="{{ current_user.avatar or '' }}" 
+                                               placeholder="https://example.com/avatar.jpg" 
+                                               class="form-input">
+                                        <small>Вставьте ссылку на изображение (JPG, PNG, макс. 5MB)</small>
+                                    </div>
+                                    <button type="button" class="btn btn-outline" onclick="useSteamAvatar()">
+                                        🎮 Использовать аватар Steam
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Персональный титул -->
+                        <div class="form-section">
+                            <h3 class="section-subtitle">📝 Персональный титул</h3>
+                            <div class="form-group">
+                                <label for="custom_title">Ваш титул</label>
+                                <input type="text" id="custom_title" name="custom_title" 
+                                       value="{{ current_user.custom_title or '' }}" 
+                                       placeholder="Например: Ветеран Арма 3, Командир отряда" 
+                                       maxlength="50" 
+                                       class="form-input">
+                                <small>Отображается под вашим ником и рангом. Максимум 50 символов.</small>
+                            </div>
+                        </div>
+
+                        <!-- Подпись -->
+                        <div class="form-section">
+                            <h3 class="section-subtitle">✍️ Подпись к сообщениям</h3>
+                            <div class="form-group">
+                                <label for="signature">Подпись</label>
+                                <textarea id="signature" name="signature" rows="4" 
+                                          class="form-textarea" 
+                                          placeholder="Ваша подпись будет отображаться под каждым сообщением...">{{ current_user.signature or '' }}</textarea>
+                                <small>HTML теги разрешены. Максимум 500 символов.</small>
+                            </div>
+                        </div>
+
+                        <!-- Игровой ник -->
+                        <div class="form-section">
+                            <h3 class="section-subtitle">🎮 Игровая информация</h3>
+                            <div class="form-group">
+                                <label for="game_nickname">Никнейм в игре</label>
+                                <input type="text" id="game_nickname" name="game_nickname" 
+                                       value="{{ current_user.game_nickname or '' }}" 
+                                       placeholder="Например: Serguvich[RU]" 
+                                       class="form-input">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="discord">Discord</label>
+                                    <input type="text" id="discord" name="discord" 
+                                           value="{{ current_user.discord or '' }}" 
+                                           placeholder="serguvich#1234" 
+                                           class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="telegram">Telegram</label>
+                                    <input type="text" id="telegram" name="telegram" 
+                                           value="{{ current_user.telegram or '' }}" 
+                                           placeholder="@serguvich" 
+                                           class="form-input">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" name="save_profile" value="1" class="btn btn-primary">
+                                💾 Сохранить изменения
+                            </button>
+                            <a href="{{ url_for('user.my_profile') }}" class="btn btn-outline">
+                                Отмена
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Вкладка: Внешний вид -->
+            <div id="tab-appearance" class="settings-tab-panel">
+                <div class="settings-section">
+                    <h2 class="section-title">🎨 Оформление</h2>
+                    
+                    <form method="POST" action="{{ url_for('user.settings') }}" class="settings-form">
+                        
+                        <!-- Тема -->
+                        <div class="form-section">
+                            <h3 class="section-subtitle">🌓 Тема оформления</h3>
+                            <div class="theme-selector">
+                                <label class="theme-option">
+                                    <input type="radio" name="theme" value="dark" 
+                                           {{ 'checked' if current_user.theme == 'dark' else '' }}>
+                                    <div class="theme-preview dark">
+                                        <div class="theme-preview-header"></div>
+                                        <div class="theme-preview-content"></div>
+                                    </div>
+                                    <span class="theme-name">Тёмная</span>
+                                </label>
+                                <label class="theme-option">
+                                    <input type="radio" name="theme" value="light" 
+                                           {{ 'checked' if current_user.theme == 'light' else '' }}>
+                                    <div class="theme-preview light">
+                                        <div class="theme-preview-header"></div>
+                                        <div class="theme-preview-content"></div>
+                                    </div>
+                                    <span class="theme-name">Светлая</span>
+                                </label>
+                                <label class="theme-option">
+                                    <input type="radio" name="theme" value="auto" 
+                                           {{ 'checked' if current_user.theme == 'auto' else '' }}>
+                                    <div class="theme-preview auto">
+                                        <div class="theme-preview-header"></div>
+                                        <div class="theme-preview-content"></div>
+                                    </div>
+                                    <span class="theme-name">Авто</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Часовой пояс -->
+                        <div class="form-section">
+                            <h3 class="section-subtitle">⏰ Часовой пояс</h3>
+                            <div class="form-group">
+                                <select id="timezone" name="timezone" class="form-select">
+                                    <option value="Europe/Moscow" {{ 'selected' if current_user.timezone == 'Europe/Moscow' else '' }}>Москва (UTC+3)</option>
+                                    <option value="Europe/Kaliningrad" {{ 'selected' if current_user.timezone == 'Europe/Kaliningrad' else '' }}>Калининград (UTC+2)</option>
+                                    <option value="Europe/Samara" {{ 'selected' if current_user.timezone == 'Europe/Samara' else '' }}>Самара (UTC+4)</option>
+                                    <option value="Asia/Yekaterinburg" {{ 'selected' if current_user.timezone == 'Asia/Yekaterinburg' else '' }}>Екатеринбург (UTC+5)</option>
+                                    <option value="Asia/Omsk" {{ 'selected' if current_user.timezone == 'Asia/Omsk' else '' }}>Омск (UTC+6)</option>
+                                    <option value="Asia/Novosibirsk" {{ 'selected' if current_user.timezone == 'Asia/Novosibirsk' else '' }}>Новосибирск (UTC+7)</option>
+                                    <option value="Asia/Krasnoyarsk" {{ 'selected' if current_user.timezone == 'Asia/Krasnoyarsk' else '' }}>Красноярск (UTC+7)</option>
+                                    <option value="Asia/Irkutsk" {{ 'selected' if current_user.timezone == 'Asia/Irkutsk' else '' }}>Иркутск (UTC+8)</option>
+                                    <option value="Asia/Yakutsk" {{ 'selected' if current_user.timezone == 'Asia/Yakutsk' else '' }}>Якутск (UTC+9)</option>
+                                    <option value="Asia/Vladivostok" {{ 'selected' if current_user.timezone == 'Asia/Vladivostok' else '' }}>Владивосток (UTC+10)</option>
+                                    <option value="UTC" {{ 'selected' if current_user.timezone == 'UTC' else '' }}>UTC (всемирное время)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Язык (только для отображения, переключение убрано) -->
+                        <div class="form-section">
+                            <h3 class="section-subtitle">🌐 Язык интерфейса</h3>
+                            <div class="form-group">
+                                <select id="language" name="language" class="form-select" disabled>
+                                    <option value="ru" selected>Русский</option>
+                                </select>
+                                <small>Сейчас доступен только русский язык</small>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" name="save_appearance" value="1" class="btn btn-primary">
+                                💾 Сохранить оформление
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Вкладка: Уведомления -->
+            <div id="tab-notifications" class="settings-tab-panel">
+                <div class="settings-section">
+                    <h2 class="section-title">🔔 Уведомления</h2>
+                    
+                    <form method="POST" action="{{ url_for('user.settings') }}" class="settings-form">
+                        
+                        <div class="form-section">
+                            <h3 class="section-subtitle">📧 Email уведомления</h3>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="email_new_reply" 
+                                           {{ 'checked' if current_user.email_new_reply else '' }}>
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-text">
+                                        <strong>Ответы на мои темы</strong>
+                                        <small>Получать email когда кто-то отвечает в ваших темах</small>
+                                    </span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="email_new_mention" 
+                                           {{ 'checked' if current_user.email_new_mention else '' }}>
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-text">
+                                        <strong>Упоминания</strong>
+                                        <small>Когда вас упоминают @ваш_ник</small>
+                                    </span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="email_private_message" 
+                                           {{ 'checked' if current_user.email_private_message else '' }}>
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-text">
+                                        <strong>Личные сообщения</strong>
+                                        <small>Новые ЛС от других пользователей</small>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3 class="section-subtitle">🔔 Уведомления на сайте</h3>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="notify_new_reply" 
+                                           {{ 'checked' if current_user.notify_new_reply else '' }}>
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-text">
+                                        <strong>Ответы на мои темы</strong>
+                                    </span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="notify_new_like" 
+                                           {{ 'checked' if current_user.notify_new_like else '' }}>
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-text">
+                                        <strong>Лайки моих сообщений</strong>
+                                    </span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="notify_announcements" 
+                                           {{ 'checked' if current_user.notify_announcements else '' }}>
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-text">
+                                        <strong>Объявления администрации</strong>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" name="save_notifications" value="1" class="btn btn-primary">
+                                💾 Сохранить настройки
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Вкладка: Приватность -->
+            <div id="tab-privacy" class="settings-tab-panel">
+                <div class="settings-section">
+                    <h2 class="section-title">🔒 Приватность</h2>
+                    
+                    <form method="POST" action="{{ url_for('user.settings') }}" class="settings-form">
+                        
+                        <div class="form-section">
+                            <h3 class="section-subtitle">👁️ Видимость профиля</h3>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="show_online_status" 
+                                           {{ 'checked' if current_user.show_online_status else '' }}>
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-text">
+                                        <strong>Показывать мой статус онлайн</strong>
+                                        <small>Другие пользователи видят когда вы в сети</small>
+                                    </span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="show_email" 
+                                           {{ 'checked' if current_user.show_email else '' }}>
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-text">
+                                        <strong>Показывать email в профиле</strong>
+                                        <small>Email будет виден другим пользователям</small>
+                                    </span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="show_activity" 
+                                           {{ 'checked' if current_user.show_activity else '' }}>
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-text">
+                                        <strong>Показывать мою активность</strong>
+                                        <small>Последнее посещение, время на форуме</small>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3 class="section-subtitle">🔍 Индексация</h3>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="allow_search_index" 
+                                           {{ 'checked' if current_user.allow_search_index else '' }}>
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-text">
+                                        <strong>Разрешить индексацию профиля</strong>
+                                        <small>Поисковые системы могут показывать ваш профиль</small>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" name="save_privacy" value="1" class="btn btn-primary">
+                                💾 Сохранить настройки
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Вкладка: Безопасность -->
+            <div id="tab-security" class="settings-tab-panel">
+                <div class="settings-section">
+                    <h2 class="section-title">🛡️ Безопасность</h2>
+                    
+                    <!-- ✅ SECURITY SCORE -->
+                    <div class="security-score-card">
+                        <div class="score-header">
+                            <h3>📊 Оценка безопасности</h3>
+                            <button class="btn btn-outline btn-sm" onclick="checkSecurity()">
+                                🔄 Обновить
+                            </button>
+                        </div>
+                        <div class="score-display">
+                            <div class="score-circle" style="--score: {{ security_score.percentage if security_score else 0 }}">
+                                <div class="score-value">{{ security_score.score if security_score else 0 }}</div>
+                                <div class="score-max">/ {{ security_score.max_score if security_score else 100 }}</div>
+                            </div>
+                            <div class="score-info">
+                                <div class="score-level" style="color: {{ security_score.level.color if security_score else '#e74c3c' }}">
+                                    {{ security_score.level.icon if security_score else '🚨' }} 
+                                    {{ security_score.level.name if security_score else 'Низкий' }}
+                                </div>
+                                <p class="score-desc">Ваш аккаунт защищён на {{ security_score.percentage if security_score else 0 }}%</p>
+                            </div>
+                        </div>
+                        
+                        {% if security_score and security_score.recommendations %}
+                        <div class="score-recommendations">
+                            <h4>💡 Рекомендации:</h4>
+                            <ul class="recommendations-list">
+                                {% for rec in security_score.recommendations %}
+                                <li>⚠️ {{ rec }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Steam авторизация -->
+                    <div class="security-info-card">
+                        <div class="info-icon">🔐</div>
+                        <h3>Авторизация через Steam</h3>
+                        <p>Ваш аккаунт привязан к Steam. Для входа используется Steam OpenID.</p>
+                        <div class="info-row">
+                            <span class="info-label">Steam ID:</span>
+                            <span class="info-value"><code>{{ current_user.steam_id }}</code></span>
+                        </div>
+                        <a href="{{ url_for('auth.logout') }}" class="btn btn-outline">
+                            🚪 Выйти из аккаунта
+                        </a>
+                    </div>
+
+                    <!-- ✅ ДВУХФАКТОРНАЯ АУТЕНТИФИКАЦИЯ -->
+                    <div class="form-section">
+                        <h3 class="section-subtitle">📱 Двухфакторная аутентификация</h3>
+                        <div class="2fa-status">
+                            {% if current_user.two_factor_enabled %}
+                            <div class="status-badge enabled">
+                                ✅ 2FA включена
+                            </div>
+                            <button class="btn btn-outline" onclick="disable2FA()">
+                                🔓 Отключить
+                            </button>
+                            {% else %}
+                            <div class="status-badge disabled">
+                                ⚠️ 2FA отключена
+                            </div>
+                            <a href="{{ url_for('user.enable_2fa') }}" class="btn btn-primary">
+                                🔐 Включить 2FA
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- ✅ АКТИВНЫЕ СЕССИИ -->
+                    <div class="form-section">
+                        <h3 class="section-subtitle">💻 Активные сессии</h3>
+                        <div class="sessions-list">
+                            {% for session in active_sessions %}
+                            <div class="session-item {{ 'current' if session.current else '' }}">
+                                <div class="session-icon">
+                                    {% if session.device == 'Mobile' %}📱
+                                    {% elif session.device == 'Tablet' %}📟
+                                    {% else %}🖥️{% endif %}
+                                </div>
+                                <div class="session-info">
+                                    <div class="session-name">
+                                        {{ session.browser }} на {{ session.os }}
+                                        {% if session.current %}<span class="badge-current">Текущая</span>{% endif %}
+                                    </div>
+                                    <div class="session-meta">
+                                        <span>🌐 {{ session.browser }}</span>
+                                        <span>📍 {{ session.ip }}</span>
+                                        <span>⏰ {{ session.last_active.strftime('%d.%m.%Y %H:%M') if session.last_active else 'Сейчас' }}</span>
+                                    </div>
+                                </div>
+                                {% if not session.current %}
+                                <button class="btn btn-sm btn-danger" onclick="endSession('{{ session.id }}')">
+                                    🚫 Завершить
+                                </button>
+                                {% else %}
+                                <span class="session-badge current">Активна</span>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        {% if active_sessions|length > 1 %}
+                        <div class="form-actions">
+                            <button class="btn btn-danger" onclick="endAllSessions()">
+                                🚪 Завершить все другие сессии
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- ✅ ИСТОРИЯ ВХОДОВ -->
+                    <div class="form-section">
+                        <h3 class="section-subtitle">📜 История входов</h3>
+                        <div class="login-history">
+                            {% for login in login_history %}
+                            <div class="history-item">
+                                <span class="history-time">{{ login.time.strftime('%d.%m.%Y %H:%M') }}</span>
+                                <span class="history-ip">{{ login.ip }}</span>
+                                <span class="history-browser">{{ login.browser }}</span>
+                                <span class="history-status success">✓ Успешно</span>
+                            </div>
+                            {% else %}
+                            <div class="history-item">
+                                <span class="history-time">{{ current_user.last_login.strftime('%d.%m.%Y %H:%M') }}</span>
+                                <span class="history-ip">{{ request.remote_addr }}</span>
+                                <span class="history-browser">{{ request.user_agent.browser or 'Unknown' }}</span>
+                                <span class="history-status success">✓ Успешно</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <a href="{{ url_for('user.security_logs') }}" class="btn btn-outline btn-sm" style="margin-top: 16px;">
+                            📋 Показать все логи
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Вкладка: Опасная зона -->
+            <div id="tab-danger" class="settings-tab-panel">
+                <div class="settings-section danger-zone">
+                    <h2 class="section-title danger">⚠️ Опасная зона</h2>
+                    
+                    <div class="danger-card">
+                        <div class="danger-icon">🗑️</div>
+                        <h3>Удаление аккаунта</h3>
+                        <p>Это действие <strong>необратимо</strong>. Все ваши темы, сообщения и данные будут удалены навсегда.</p>
+                        <ul class="danger-list">
+                            <li>❌ Все ваши темы будут удалены</li>
+                            <li>❌ Все сообщения будут удалены</li>
+                            <li>❌ Привязка к Steam будет разорвана</li>
+                            <li>❌ Восстановление невозможно</li>
+                        </ul>
+                        <button type="button" class="btn btn-danger" onclick="confirmDeleteAccount()">
+                            🗑️ Удалить аккаунт
+                        </button>
+                    </div>
+
+                    <div class="danger-card">
+                        <div class="danger-icon">🔓</div>
+                        <h3>Отвязать Steam аккаунт</h3>
+                        <p>Отвяжите ваш Steam аккаунт от форума. Вы не сможете войти до повторной привязки.</p>
+                        <button type="button" class="btn btn-warning" onclick="confirmUnlinkSteam()">
+                            🔓 Отвязать Steam
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- ==========================================
+     ПОЛНЫЙ ФУНКЦИОНАЛЬНЫЙ СКРИПТ
+     ========================================== -->
+<script>
+// ==========================================
+// ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
+// ==========================================
+function switchSettingsTab(tabName) {
+    document.querySelectorAll('.settings-tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.settings-tab-panel').forEach(panel => panel.classList.remove('active'));
+    
+    const activeTab = document.querySelector(`[onclick="switchSettingsTab('${tabName}')"]`);
+    if (activeTab) activeTab.classList.add('active');
+    
+    document.getElementById('tab-' + tabName).classList.add('active');
+    localStorage.setItem('settingsTab', tabName);
+}
+
+// ==========================================
+// ИНИЦИАЛИЗАЦИЯ
+// ==========================================
+document.addEventListener('DOMContentLoaded', function() {
+    const savedTab = localStorage.getItem('settingsTab');
+    if (savedTab) switchSettingsTab(savedTab);
+    initTheme();
+    initFormValidation();
+    renderFlashMessages();
+});
+
+// ==========================================
+// СИСТЕМА ТЕМ
+// ==========================================
+function initTheme() {
+    const themeRadios = document.querySelectorAll('input[name="theme"]');
+    const currentTheme = document.querySelector('input[name="theme"]:checked')?.value || 'dark';
+    applyTheme(currentTheme);
+    
+    themeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            applyTheme(this.value);
+        });
+    });
+    
+    if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            const current = document.querySelector('input[name="theme"]:checked')?.value;
+            if (current === 'auto') applyTheme('auto');
+        });
+    }
+}
+
+function applyTheme(theme) {
+    document.documentElement.classList.remove('theme-dark', 'theme-light');
+    if (theme === 'dark') {
+        document.documentElement.classList.add('theme-dark');
+    } else if (theme === 'light') {
+        document.documentElement.classList.add('theme-light');
+    } else if (theme === 'auto') {
+        const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.classList.add(isDark ? 'theme-dark' : 'theme-light');
+    }
+}
+
+// ==========================================
+// АВАТАР
+// ==========================================
+function useSteamAvatar() {
+    const avatarInput = document.getElementById('avatar_url');
+    const avatarPreview = document.querySelector('.avatar-preview');
+    const steamAvatar = "{{ current_user.avatar or '' }}";
+    
+    if (steamAvatar && steamAvatar.startsWith('http')) {
+        avatarInput.value = steamAvatar;
+        if (avatarPreview) avatarPreview.src = steamAvatar;
+        showToast('✅ Аватар Steam применён!', 'success');
+    } else {
+        showToast('❌ Не удалось получить аватар', 'error');
+    }
+}
+
+// ==========================================
+// БЕЗОПАСНОСТЬ
+// ==========================================
+function checkSecurity() {
+    fetch('/user/me/security/check')
+        .then(response => response.json())
+        .then(data => {
+            showToast(`🛡️ Оценка безопасности: ${data.score}/${data.max_score}`, 'success');
+            location.reload();
+        })
+        .catch(error => {
+            showToast('❌ Ошибка проверки', 'error');
+        });
+}
+
+function endSession(sessionId) {
+    if (!confirm('Завершить эту сессию?')) return;
+    
+    fetch(`/user/me/security/sessions/end/${sessionId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            showToast('✅ Сессия завершена', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast('❌ Ошибка', 'error');
+        }
+    })
+    .catch(error => {
+        showToast('❌ Ошибка соединения', 'error');
+    });
+}
+
+function endAllSessions() {
+    if (!confirm('⚠️ Завершить ВСЕ сессии кроме текущей?\n\nВы останетесь в системе только на этом устройстве.')) return;
+    
+    fetch('/user/me/security/sessions/end-all', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            showToast('✅ Все сессии завершены', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast('❌ Ошибка', 'error');
+        }
+    })
+    .catch(error => {
+        showToast('❌ Ошибка соединения', 'error');
+    });
+}
+
+function disable2FA() {
+    if (!confirm('⚠️ Отключить двухфакторную аутентификацию?\n\nЭто снизит безопасность аккаунта.')) return;
+    
+    if (!confirm('Вы уверены? Введите "ОТКЛЮЧИТЬ" для подтверждения:')) return;
+    
+    fetch('/user/me/security/2fa/disable', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            showToast('ℹ️ 2FA отключена', 'info');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast('❌ Ошибка', 'error');
+        }
+    })
+    .catch(error => {
+        showToast('❌ Ошибка соединения', 'error');
+    });
+}
+
+// ==========================================
+// ОПАСНАЯ ЗОНА
+// ==========================================
+function confirmDeleteAccount() {
+    if (!confirm('⚠️ ВЫ УВЕРЕНЫ?\n\nЭто действие НЕОБРАТИМО!\n\nВсе данные будут удалены навсегда.')) return;
+    
+    const verification = prompt('Введите "УДАЛИТЬ" для подтверждения:');
+    if (verification === 'УДАЛИТЬ') {
+        showToast('⚠️ Функция в разработке', 'warning');
+    } else {
+        showToast('❌ Удаление отменено', 'error');
+    }
+}
+
+function confirmUnlinkSteam() {
+    if (confirm('⚠️ Отвязать Steam?\n\nВы не сможете войти до повторной привязки.')) {
+        showToast('⚠️ Функция в разработке', 'warning');
+    }
+}
+
+// ==========================================
+// ВАЛИДАЦИЯ ФОРМ
+// ==========================================
+function initFormValidation() {
+    document.querySelectorAll('.settings-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const btn = this.querySelector('button[type="submit"]');
+            const original = btn.innerHTML;
+            
+            btn.innerHTML = '⏳ Сохранение...';
+            btn.style.opacity = '0.7';
+            btn.style.cursor = 'not-allowed';
+            btn.dataset.original = original;
+            
+            setTimeout(() => {
+                btn.innerHTML = btn.dataset.original || original;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            }, 3000);
+        });
+    });
+    
+    const avatarInput = document.getElementById('avatar_url');
+    if (avatarInput) {
+        avatarInput.addEventListener('blur', function() {
+            if (this.value && !this.value.startsWith('http')) {
+                showToast('⚠️ URL должен начинаться с http:// или https://', 'warning');
+                this.value = '';
+            }
+        });
+    }
+}
+
+// ==========================================
+// TOAST УВЕДОМЛЕНИЯ
+// ==========================================
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+        <span class="toast-icon">${type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️'}</span>
+        <span class="toast-message">${message}</span>
+        <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+    `;
+    
+    Object.assign(toast.style, {
+        position: 'fixed', top: '20px', right: '20px',
+        padding: '14px 20px', borderRadius: '10px',
+        background: type === 'success' ? '#2ecc71' : type === 'error' ? '#ff4757' : type === 'warning' ? '#ffa502' : '#3498db',
+        color: '#fff', boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+        display: 'flex', alignItems: 'center', gap: '10px',
+        zIndex: '10000', transform: 'translateX(400px)',
+        transition: 'transform 0.3s ease', fontWeight: '500', fontSize: '0.9rem'
+    });
+    
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => { toast.style.transform = 'translateX(0)'; });
+    setTimeout(() => {
+        toast.style.transform = 'translateX(400px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+function renderFlashMessages() {
+    // Flask flash messages рендерятся в base.html
+}
+</script>
+
+<!-- ==========================================
+     СТИЛИ ДЛЯ БЕЗОПАСНОСТИ
+     ========================================== -->
+<style>
+/* Security Score */
+.security-score-card {
+    background: linear-gradient(135deg, var(--accent-dim) 0%, var(--bg-card) 100%);
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.score-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.score-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.score-display {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    margin-bottom: 20px;
+}
+
+.score-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: conic-gradient(
+        var(--accent) calc(var(--score) * 1%),
+        var(--border-color) 0
+    );
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.score-circle::before {
+    content: '';
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    background: var(--bg-card);
+    border-radius: 50%;
+}
+
+.score-value {
+    position: relative;
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--text-primary);
+}
+
+.score-max {
+    position: relative;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.score-info {
+    flex: 1;
+}
+
+.score-level {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+}
+
+.score-desc {
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.score-recommendations {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 16px;
+}
+
+.score-recommendations h4 {
+    margin: 0 0 12px 0;
+    color: var(--text-primary);
+}
+
+.recommendations-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.recommendations-list li {
+    padding: 8px 0;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.recommendations-list li:last-child {
+    border-bottom: none;
+}
+
+/* 2FA Status */
+.2fa-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+}
+
+.status-badge {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.status-badge.enabled {
+    background: rgba(46, 204, 113, 0.2);
+    color: #2ecc71;
+}
+
+.status-badge.disabled {
+    background: rgba(241, 196, 15, 0.2);
+    color: #f1c40f;
+}
+
+/* Sessions */
+.sessions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.session-item {
+    display: grid;
+    grid-template-columns: 50px 1fr auto;
+    gap: 16px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    align-items: center;
+}
+
+.session-item.current {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+}
+
+.session-icon {
+    font-size: 2rem;
+    text-align: center;
+}
+
+.session-info {
+    min-width: 0;
+}
+
+.session-name {
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.badge-current {
+    padding: 2px 8px;
+    background: var(--accent);
+    color: #000;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.session-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.session-badge {
+    padding: 6px 12px;
+    background: var(--bg-card);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.session-badge.current {
+    background: var(--accent);
+    color: #000;
+}
+
+/* Login History */
+.login-history {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.history-item {
+    display: grid;
+    grid-template-columns: 140px 120px 1fr auto;
+    gap: 16px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    align-items: center;
+}
+
+.history-time {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.history-ip {
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+}
+
+.history-browser {
+    color: var(--text-secondary);
+}
+
+.history-status {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.history-status.success {
+    background: rgba(46, 204, 113, 0.2);
+    color: #2ecc71;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .score-display {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .session-item,
+    .history-item {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .session-meta {
+        flex-direction: column;
+        gap: 4px;
+    }
+}
+</style>
+{% endblock %}

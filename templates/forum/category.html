@@ -1,0 +1,1018 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ category.title }} | Форум{% endblock %}
+
+{% block content %}
+<div class="category-wrapper">
+    
+    <!-- Шапка категории -->
+    <div class="category-header">
+        <div class="container">
+            <nav class="breadcrumb">
+                <a href="{{ url_for('core.index') }}">Главная</a>
+                <span>/</span>
+                <a href="{{ url_for('forum.index') }}">Форум</a>
+                <span>/</span>
+                <span class="current">{{ category.title }}</span>
+            </nav>
+            
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="category-icon" style="background: {{ category.color }}20; border-color: {{ category.color }}">
+                        {{ category.icon }}
+                    </div>
+                    <div class="category-info">
+                        <h1 class="category-title">{{ category.title }}</h1>
+                        <p class="category-description">{{ category.description }}</p>
+                        <div class="category-stats">
+                            <span class="stat">📝 {{ category_stats.topics }} тем</span>
+                            <span class="stat">💬 {{ category_stats.posts }} сообщений</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="header-actions">
+                    {% if current_user.is_authenticated and can('topic.create') %}
+                    <a href="{{ url_for('forum.create_topic', category_id=category.id) }}" class="btn btn-primary">
+                        <span class="btn-icon">📝</span>
+                        <span>Новая тема</span>
+                    </a>
+                    {% endif %}
+                    
+                    <!-- ✅ РАБОЧАЯ КНОПКА ПОДПИСКИ -->
+                    {% if current_user.is_authenticated %}
+                        {% set is_subscribed = CategorySubscription.is_subscribed(current_user.id, category.id) %}
+                        <button class="btn btn-outline subscribe-btn" 
+                                id="subscribeBtn"
+                                data-category-id="{{ category.id }}"
+                                data-subscribed="{{ is_subscribed|lower }}"
+                                onclick="toggleCategorySubscription()">
+                            <span class="btn-icon">🔔</span>
+                            <span class="btn-text">{{ 'Отписаться' if is_subscribed else 'Подписаться' }}</span>
+                        </button>
+                    {% else %}
+                        <a href="{{ url_for('auth.login_steam') }}" class="btn btn-outline" title="Войдите чтобы подписаться">
+                            <span class="btn-icon">🔔</span>
+                            <span>Подписаться</span>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container category-content">
+        
+        <!-- Панель фильтров и поиска -->
+        <div class="filter-panel">
+            <div class="search-box">
+                <form method="GET" class="search-form">
+                    <input type="hidden" name="filter" value="{{ current_filter }}">
+                    <input type="hidden" name="sort" value="{{ current_sort }}">
+                    <input type="text" name="q" class="search-input" placeholder="Поиск по разделу..." value="{{ search_q }}">
+                    <button type="submit" class="search-btn">🔍</button>
+                </form>
+            </div>
+            
+            <div class="filter-controls">
+                <div class="filter-tabs">
+                    <a href="{{ url_for('forum.category', category_id=category.id, filter='all', sort=current_sort) }}" 
+                       class="filter-tab {{ 'active' if current_filter == 'all' else '' }}">
+                        Все
+                    </a>
+                    <a href="{{ url_for('forum.category', category_id=category.id, filter='pinned', sort=current_sort) }}" 
+                       class="filter-tab {{ 'active' if current_filter == 'pinned' else '' }}">
+                        📌 Закреп
+                    </a>
+                    <a href="{{ url_for('forum.category', category_id=category.id, filter='solved', sort=current_sort) }}" 
+                       class="filter-tab {{ 'active' if current_filter == 'solved' else '' }}">
+                        ✅ Решено
+                    </a>
+                </div>
+                
+                <select class="sort-select" onchange="location.href=this.value">
+                    <option value="{{ url_for('forum.category', category_id=category.id, sort='updated', filter=current_filter) }}" 
+                            {{ 'selected' if current_sort == 'updated' else '' }}>
+                        По обновлению
+                    </option>
+                    <option value="{{ url_for('forum.category', category_id=category.id, sort='created', filter=current_filter) }}" 
+                            {{ 'selected' if current_sort == 'created' else '' }}>
+                        По дате
+                    </option>
+                    <option value="{{ url_for('forum.category', category_id=category.id, sort='views', filter=current_filter) }}" 
+                            {{ 'selected' if current_sort == 'views' else '' }}>
+                        По просмотрам
+                    </option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Легенда -->
+        <div class="topic-legend">
+            <span class="legend-item"><span class="legend-icon pinned">📌</span> Закреплённая</span>
+            <span class="legend-item"><span class="legend-icon hot">🔥</span> Популярная (&gt;50 просм.)</span>
+            <span class="legend-item"><span class="legend-icon new">🆕</span> Новая (&lt;24ч)</span>
+            <span class="legend-item"><span class="legend-icon solved">✅</span> Решённая</span>
+            <span class="legend-item"><span class="legend-icon locked">🔒</span> Закрытая</span>
+        </div>
+
+        <!-- Список тем -->
+        <div class="topics-list">
+            {% if topics %}
+                {% for topic in topics %}
+                <div class="topic-card {{ 'is-pinned' if topic.is_pinned else '' }} {{ 'is-locked' if topic.is_locked else '' }}">
+                    
+                    <!-- Индикаторы -->
+                    <div class="topic-indicators">
+                        {% if topic.is_pinned %}
+                        <span class="indicator pinned" title="Закреплена">📌</span>
+                        {% endif %}
+                        {% if topic.is_locked %}
+                        <span class="indicator locked" title="Закрыта">🔒</span>
+                        {% endif %}
+                        {% if topic.is_hot %}
+                        <span class="indicator hot" title="Популярная">🔥</span>
+                        {% endif %}
+                        {% if topic.is_new %}
+                        <span class="indicator new" title="Новая">🆕</span>
+                        {% endif %}
+                        {% if topic.has_solution %}
+                        <span class="indicator solved" title="Есть решение">✅</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Основной контент -->
+                    <div class="topic-main">
+                        <div class="topic-header">
+                            <h3 class="topic-title">
+                                <a href="{{ url_for('forum.topic', topic_id=topic.id) }}" class="topic-link">
+                                    {{ topic.title }}
+                                </a>
+                            </h3>
+                            
+                            <!-- ✅ ИСПРАВЛЕНОЕ ОТОБРАЖЕНИЕ ТЕГОВ -->
+                            {% if topic.tags %}
+                            <div class="topic-tags">
+                                {% for tag in topic.tags %}
+                                <span class="topic-tag" style="background: {{ tag.color }}20; color: {{ tag.color }}; border-color: {{ tag.color }}">
+                                    {{ tag.name }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="topic-preview">
+                            {{ topic.preview }}
+                        </div>
+
+                        <div class="topic-meta">
+                            <div class="topic-author">
+                                <img src="{{ topic.author.avatar or 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg' }}" 
+                                     alt="{{ topic.author.username }}" class="mini-avatar">
+                                <span class="author-name">{{ topic.author.username }}</span>
+                                {% if topic.author.role %}
+                                <span class="author-role" style="color: {{ topic.author.role.color }}">
+                                    {{ topic.author.role.title }}
+                                </span>
+                                {% endif %}
+                                <span class="author-status {{ 'online' if topic.author.is_online else 'offline' }}">
+                                    {{ '🟢' if topic.author.is_online else '⚫' }}
+                                </span>
+                            </div>
+                            
+                            <div class="topic-datetime">
+                                <span class="created" title="{{ topic.created_at.strftime('%d.%m.%Y %H:%M') }}">
+                                    {{ topic.created_at.strftime('%d.%m.%Y %H:%M') }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Статистика -->
+                    <div class="topic-stats">
+                        <div class="stat-item views" title="Просмотры">
+                            <span class="stat-icon">👁️</span>
+                            <span class="stat-value">{{ topic.views }}</span>
+                        </div>
+                        <div class="stat-item replies" title="Ответы">
+                            <span class="stat-icon">💬</span>
+                            <span class="stat-value">{{ topic.replies }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Последний пост -->
+                    <div class="topic-last-post">
+                        <div class="last-post-label">Последнее сообщение</div>
+                        {% if topic.last_post %}
+                        <div class="last-post-info">
+                            <span class="last-author">{{ topic.last_post.author }}</span>
+                            <span class="last-time">{{ topic.last_post.time }}</span>
+                        </div>
+                        {% else %}
+                        <div class="last-post-info">
+                            <span class="no-posts">Нет сообщений</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+            <!-- Пустое состояние -->
+            <div class="empty-state">
+                <div class="empty-icon">📭</div>
+                <h3 class="empty-title">В этом разделе пока нет тем</h3>
+                <p class="empty-text">
+                    {% if search_q %}
+                    По вашему запросу ничего не найдено. Попробуйте изменить параметры поиска.
+                    {% elif current_filter != 'all' %}
+                    В этой категории пока нет тем с выбранным фильтром.
+                    {% else %}
+                    Будьте первым — создайте новую тему!
+                    {% endif %}
+                </p>
+                {% if current_user.is_authenticated and can('topic.create') %}
+                <a href="{{ url_for('forum.create_topic', category_id=category.id) }}" class="btn btn-primary">
+                    <span class="btn-icon">📝</span>
+                    <span>Создать первую тему</span>
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Пагинация -->
+        {% if pagination.pages > 1 %}
+        <div class="pagination-wrapper">
+            <div class="pagination">
+                {% if pagination.has_prev %}
+                <a href="{{ url_for('forum.category', category_id=category.id, page=pagination.prev_num, filter=current_filter, sort=current_sort) }}" 
+                   class="pagination-btn">
+                    <span>←</span> Назад
+                </a>
+                {% endif %}
+                
+                <div class="pagination-numbers">
+                    {% for page_num in pagination.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != pagination.page %}
+                            <a href="{{ url_for('forum.category', category_id=category.id, page=page_num, filter=current_filter, sort=current_sort) }}" 
+                               class="pagination-number">{{ page_num }}</a>
+                            {% else %}
+                            <span class="pagination-number active">{{ page_num }}</span>
+                            {% endif %}
+                        {% else %}
+                        <span class="pagination-ellipsis">…</span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                
+                {% if pagination.has_next %}
+                <a href="{{ url_for('forum.category', category_id=category.id, page=pagination.next_num, filter=current_filter, sort=current_sort) }}" 
+                   class="pagination-btn">
+                    Вперёд <span>→</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<style>
+/* ==========================================
+   СТИЛИ СТРАНИЦЫ КАТЕГОРИИ
+   ========================================== */
+
+.category-wrapper {
+    min-height: 100vh;
+    background: var(--bg-primary);
+    padding-bottom: 60px;
+}
+
+/* Шапка категории */
+.category-header {
+    background: linear-gradient(135deg, var(--accent-dim) 0%, var(--bg-secondary) 100%);
+    border-bottom: 1px solid var(--border-color);
+    padding: 32px 0;
+    margin-bottom: 32px;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.breadcrumb a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.breadcrumb a:hover {
+    color: var(--accent);
+}
+
+.breadcrumb .current {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: 1;
+}
+
+.category-icon {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    background: rgba(78, 205, 196, 0.2);
+    border: 2px solid var(--accent);
+    border-radius: 16px;
+    flex-shrink: 0;
+}
+
+.category-info {
+    flex: 1;
+}
+
+.category-title {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0 0 8px 0;
+    color: var(--text-primary);
+}
+
+.category-description {
+    margin: 0 0 12px 0;
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.category-stats {
+    display: flex;
+    gap: 16px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+}
+
+/* Панель фильтров */
+.filter-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    flex: 1;
+    min-width: 300px;
+}
+
+.search-form {
+    display: flex;
+    gap: 8px;
+}
+
+.search-input {
+    flex: 1;
+    padding: 10px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.search-btn {
+    padding: 10px 20px;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    color: #000;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.search-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(var(--accent-rgb, 231, 76, 60), 0.3);
+}
+
+.filter-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.filter-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.filter-tab {
+    padding: 8px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.filter-tab:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+.filter-tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+}
+
+.sort-select {
+    padding: 8px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+/* Легенда */
+.topic-legend {
+    display: flex;
+    gap: 20px;
+    padding: 12px 0;
+    margin-bottom: 16px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.legend-icon {
+    font-size: 1rem;
+}
+
+/* Список тем */
+.topics-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.topic-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 20px;
+    align-items: center;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.topic-card:hover {
+    border-color: var(--border-hover);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.topic-card.is-pinned {
+    border-left: 3px solid #f1c40f;
+    background: rgba(241, 196, 15, 0.05);
+}
+
+.topic-card.is-locked {
+    opacity: 0.8;
+}
+
+/* Индикаторы */
+.topic-indicators {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.indicator {
+    font-size: 1.1rem;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.indicator.pinned { color: #f1c40f; }
+.indicator.locked { color: #e74c3c; }
+.indicator.hot { color: #e67e22; }
+.indicator.new { color: #3498db; }
+.indicator.solved { color: #2ecc71; }
+
+/* Основной контент темы */
+.topic-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.topic-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.topic-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.topic-link {
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.topic-link:hover {
+    color: var(--accent);
+}
+
+/* ✅ ИСПРАВЛЕННЫЕ ТЕГИ */
+.topic-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.topic-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid;
+    background: rgba(83, 82, 237, 0.2);
+    color: #5352ed;
+}
+
+.topic-preview {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.topic-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.topic-author {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mini-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.author-name {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.author-role {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.author-status {
+    font-size: 0.7rem;
+}
+
+/* Статистика темы */
+.topic-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-icon {
+    font-size: 1.1rem;
+    opacity: 0.7;
+}
+
+.stat-value {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+/* Последний пост */
+.topic-last-post {
+    min-width: 180px;
+    text-align: right;
+}
+
+.last-post-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.last-post-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.last-author {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.last-time {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* Пустое состояние */
+.empty-state {
+    text-align: center;
+    padding: 80px 40px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-title {
+    font-size: 1.3rem;
+    margin: 0 0 8px 0;
+    color: var(--text-primary);
+}
+
+.empty-text {
+    color: var(--text-muted);
+    margin: 0 0 24px 0;
+}
+
+/* Пагинация */
+.pagination-wrapper {
+    margin-top: 32px;
+    display: flex;
+    justify-content: center;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pagination-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.pagination-btn:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+    transform: translateY(-2px);
+}
+
+.pagination-numbers {
+    display: flex;
+    gap: 6px;
+}
+
+.pagination-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.pagination-number:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+.pagination-number.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+}
+
+.pagination-ellipsis {
+    padding: 0 8px;
+    color: var(--text-muted);
+}
+
+/* ✅ СТИЛИ ДЛЯ КНОПКИ ПОДПИСКИ */
+.subscribe-btn.subscribed {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+}
+
+.subscribe-btn.subscribed:hover {
+    background: #c0392b;
+    border-color: #c0392b;
+    color: #fff;
+}
+
+.subscribe-btn.loading {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+.subscribe-btn.loading .btn-text::after {
+    content: '...';
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+    .topic-card {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .topic-indicators {
+        flex-direction: row;
+    }
+    
+    .topic-stats {
+        flex-direction: row;
+        justify-content: flex-start;
+    }
+    
+    .topic-last-post {
+        text-align: left;
+    }
+}
+
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+    }
+    
+    .header-actions {
+        width: 100%;
+        justify-content: stretch;
+    }
+    
+    .header-actions .btn {
+        flex: 1;
+        justify-content: center;
+    }
+    
+    .filter-panel {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .search-box {
+        min-width: auto;
+    }
+    
+    .filter-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-tabs {
+        overflow-x: auto;
+    }
+    
+    .topic-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+</style>
+
+<script>
+// ==========================================
+// ПОДПИСКА НА РАЗДЕЛ (AJAX)
+// ==========================================
+
+function toggleCategorySubscription() {
+    const btn = document.getElementById('subscribeBtn');
+    if (!btn) return;
+    
+    const categoryId = btn.dataset.categoryId;
+    const isSubscribed = btn.dataset.subscribed === 'true';
+    const btnText = btn.querySelector('.btn-text');
+    const originalText = btnText.textContent;
+    
+    // Блокируем кнопку и показываем загрузку
+    btn.classList.add('loading');
+    btn.disabled = true;
+    btnText.textContent = isSubscribed ? 'Отписываемся...' : 'Подписываемся...';
+    
+    fetch(`/forum/category/${categoryId}/subscribe`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Обновляем состояние кнопки
+            btn.dataset.subscribed = data.subscribed.toString();
+            btnText.textContent = data.subscribed ? 'Отписаться' : 'Подписаться';
+            
+            // Добавляем/убираем класс для стилей
+            if (data.subscribed) {
+                btn.classList.add('subscribed');
+            } else {
+                btn.classList.remove('subscribed');
+            }
+            
+            // Показываем сообщение
+            showFlashMessage(data.message, data.subscribed ? 'success' : 'info');
+        } else {
+            showFlashMessage('❌ Ошибка при изменении подписки', 'error');
+            btnText.textContent = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Subscribe error:', error);
+        showFlashMessage('❌ Ошибка соединения с сервером', 'error');
+        btnText.textContent = originalText;
+    })
+    .finally(() => {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+    });
+}
+
+// ==========================================
+// FLASH-СООБЩЕНИЯ (всплывающие уведомления)
+// ==========================================
+
+function showFlashMessage(message, type = 'info') {
+    // Проверяем, есть ли уже контейнер
+    let container = document.querySelector('.flash-container');
+    
+    // Создаём если нет
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'flash-container';
+        container.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 10000;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        `;
+        document.body.appendChild(container);
+    }
+    
+    // Создаём сообщение
+    const flashMsg = document.createElement('div');
+    const icons = { success: '✓', error: '✕', info: '!', warning: '⚠' };
+    
+    flashMsg.className = `flash-msg flash-${type}`;
+    flashMsg.innerHTML = `
+        <span class="flash-icon">${icons[type] || '!'}</span>
+        ${message}
+    `;
+    flashMsg.style.cssText = `
+        padding: 14px 20px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 500;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        animation: slideIn 0.3s ease;
+        background: ${type === 'success' ? '#2ecc71' : type === 'error' ? '#e74c3c' : type === 'warning' ? '#f1c40f' : '#3498db'};
+        color: ${type === 'error' ? '#fff' : '#000'};
+    `;
+    
+    container.appendChild(flashMsg);
+    
+    // Авто-удаление через 5 секунд
+    setTimeout(() => {
+        flashMsg.style.opacity = '0';
+        flashMsg.style.transform = 'translateY(-20px)';
+        setTimeout(() => flashMsg.remove(), 300);
+    }, 5000);
+}
+
+// Добавляем анимацию если её нет
+if (!document.querySelector('#flash-animations')) {
+    const style = document.createElement('style');
+    style.id = 'flash-animations';
+    style.textContent = `
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    `;
+    document.head.appendChild(style);
+}
+</script>
+{% endblock %}

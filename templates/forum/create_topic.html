@@ -1,0 +1,715 @@
+{% extends 'base.html' %}
+
+{% block title %}Создание темы{% if category %} в "{{ category.title }}"{% endif %} | {{ Setting.get('forum_name', 'TW-FORUM') }}{% endblock %}
+
+{% block content %}
+<div class="create-topic-wrapper">
+    
+    <!-- Шапка -->
+    <div class="page-header">
+        <div class="container">
+            <nav class="breadcrumb">
+                <a href="{{ url_for('core.index') }}">Главная</a>
+                <span>/</span>
+                <a href="{{ url_for('forum.index') }}">Форум</a>
+                {% if category %}
+                <span>/</span>
+                <a href="{{ url_for('forum.category', category_id=category.id) }}">{{ category.title }}</a>
+                {% endif %}
+                <span>/</span>
+                <span class="current">Новая тема</span>
+            </nav>
+            <h1 class="page-title">
+                <span class="title-icon">📝</span>
+                Создание новой темы
+                {% if category %}
+                <small class="page-subtitle">в разделе "{{ category.title }}"</small>
+                {% endif %}
+            </h1>
+        </div>
+    </div>
+
+    <div class="container page-content">
+        
+        <div class="content-card">
+            <form method="POST" action="{{ url_for('forum.create_topic', category_id=category.id if category else None) }}" class="create-form" id="createTopicForm">
+                
+                <!-- Заголовок темы -->
+                <div class="form-group">
+                    <label for="title">Заголовок темы *</label>
+                    <input type="text" id="title" name="title" 
+                           class="form-input title-input"
+                           placeholder="О чём ваша тема?"
+                           value="{{ request.form.title or '' }}"
+                           required maxlength="200">
+                    <div class="char-counter"><span id="titleCount">0</span>/200</div>
+                </div>
+
+                <!-- Категория (если не выбрана в URL) -->
+                {% if not category %}
+                <div class="form-group">
+                    <label for="category_id">Раздел *</label>
+                    <select id="category_id" name="category_id" class="form-select" required>
+                        <option value="">Выберите раздел...</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}" {{ 'selected' if request.form.category_id|int == cat.id else '' }}>
+                            {{ cat.icon }} {{ cat.title }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% else %}
+                <input type="hidden" name="category_id" value="{{ category.id }}">
+                {% endif %}
+
+                <!-- Содержимое поста -->
+                <div class="form-group">
+                    <label for="content">Сообщение *</label>
+                    
+                    <!-- Панель инструментов редактора -->
+                    <div class="editor-toolbar">
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('**', '**', 'жирный')" title="Жирный">
+                            <strong>B</strong>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('*', '*', 'курсив')" title="Курсив">
+                            <em>I</em>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('`', '`', 'код')" title="Код">
+                            <code>&lt;/&gt;</code>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('[', '](url)', 'ссылка')" title="Ссылка">
+                            🔗
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('![', '](url)', 'изображение')" title="Изображение" 
+                                {{ '' if can('post.upload_image') else 'disabled' }} title="{{ '' if can('post.upload_image') else 'Только для VIP+' }}">
+                            🖼️
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('```', '\n```', 'блок кода')" title="Блок кода">
+                            ⌨️
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('> ', '', 'цитата')" title="Цитата">
+                            ❝
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('- ', '', 'список')" title="Список">
+                            •
+                        </button>
+                        <div class="toolbar-divider"></div>
+                        <button type="button" class="editor-btn preview-btn" onclick="togglePreview()">
+                            👁️ Предпросмотр
+                        </button>
+                    </div>
+                    
+                    <!-- Текстовое поле -->
+                    <textarea id="content" name="content" 
+                              class="form-textarea editor-textarea"
+                              placeholder="Напишите ваше сообщение...&#10;&#10;Поддерживается Markdown:&#10;• **жирный**&#10;• *курсив*&#10;• `код`&#10;• [ссылка](url)&#10;• > цитата"
+                              required>{{ request.form.content or '' }}</textarea>
+                    
+                    <!-- Предпросмотр (скрыт по умолчанию) -->
+                    <div id="preview" class="preview-panel hidden">
+                        <div class="preview-header">Предпросмотр</div>
+                        <div id="previewContent" class="preview-content markdown-body"></div>
+                    </div>
+                    
+                    <small class="form-hint">
+                        💡 Поддерживается <a href="#" onclick="openMarkdownHelp(); return false;">Markdown-разметка</a>
+                        {% if can('post.use_html') %}• Также доступен безопасный HTML{% endif %}
+                    </small>
+                </div>
+
+                <!-- Дополнительные опции -->
+                <details class="form-details">
+                    <summary>⚙️ Дополнительные опции</summary>
+                    <div class="details-content">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="subscribe" checked>
+                            <span>Подписаться на ответы в этой теме</span>
+                        </label>
+                        {% if can('topic.pin') and category %}
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="pin_topic">
+                            <span>Закрепить тему (только для модераторов)</span>
+                        </label>
+                        {% endif %}
+                    </div>
+                </details>
+
+                <!-- Кнопки действий -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                        🚀 Опубликовать тему
+                    </button>
+                    <a href="{{ url_for('forum.category', category_id=category.id) if category else url_for('forum.index') }}" 
+                       class="btn btn-outline" id="cancelBtn">
+                        Отмена
+                    </a>
+                    <span class="form-status" id="formStatus"></span>
+                </div>
+            </form>
+        </div>
+
+        <!-- Справка по Markdown -->
+        <div class="content-card help-card">
+            <div class="card-header">
+                <h3>📚 Справка по Markdown</h3>
+            </div>
+            <div class="card-body">
+                <div class="markdown-help-grid">
+                    <div class="help-item">
+                        <code>**текст**</code>
+                        <span>→ <strong>жирный</strong></span>
+                    </div>
+                    <div class="help-item">
+                        <code>*текст*</code>
+                        <span>→ <em>курсив</em></span>
+                    </div>
+                    <div class="help-item">
+                        <code>`код`</code>
+                        <span>→ <code>инлайн-код</code></span>
+                    </div>
+                    <div class="help-item">
+                        <code>```python\nкод\n```</code>
+                        <span>→ блок кода с подсветкой</span>
+                    </div>
+                    <div class="help-item">
+                        <code>[текст](url)</code>
+                        <span>→ <a href="#">ссылка</a></span>
+                    </div>
+                    <div class="help-item">
+                        <code>![alt](img.jpg)</code>
+                        <span>→ изображение</span>
+                    </div>
+                    <div class="help-item">
+                        <code>> цитата</code>
+                        <span>→ блок цитаты</span>
+                    </div>
+                    <div class="help-item">
+                        <code>- элемент</code>
+                        <span>→ маркированный список</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+/* ==========================================
+   СТИЛИ СТРАНИЦЫ СОЗДАНИЯ ТЕМЫ
+   ========================================== */
+
+.create-topic-wrapper {
+    min-height: 100vh;
+    background: var(--bg-primary);
+    padding-bottom: 60px;
+}
+
+/* Шапка */
+.page-header {
+    background: linear-gradient(135deg, var(--accent-dim) 0%, var(--bg-secondary) 100%);
+    border-bottom: 1px solid var(--border-color);
+    padding: 32px 0;
+    margin-bottom: 32px;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.breadcrumb a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.breadcrumb a:hover {
+    color: var(--accent);
+}
+
+.breadcrumb .current {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.page-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.title-icon { font-size: 2rem; }
+
+.page-subtitle {
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+/* Контент */
+.page-content { max-width: 900px; }
+
+.content-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+    margin-bottom: 24px;
+}
+
+.card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--text-primary);
+}
+
+.card-body { padding: 24px; }
+
+/* Форма */
+.create-form { padding: 24px; }
+
+.form-group { margin-bottom: 24px; }
+
+.form-group label {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.title-input {
+    font-size: 1.3rem;
+    font-weight: 600;
+    padding: 14px 18px;
+}
+
+.char-counter {
+    text-align: right;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.form-select, .form-input, .form-textarea {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.form-select:focus, .form-input:focus, .form-textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.form-textarea {
+    font-family: var(--font-mono);
+    resize: vertical;
+    min-height: 300px;
+    line-height: 1.5;
+}
+
+.form-hint {
+    display: block;
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.form-hint a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+/* Редактор */
+.editor-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    flex-wrap: wrap;
+}
+
+.editor-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.editor-btn:hover:not(:disabled) {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+.editor-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.editor-btn strong, .editor-btn em, .editor-btn code {
+    font-family: inherit;
+    font-style: normal;
+}
+
+.toolbar-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border-color);
+    margin: 0 8px;
+}
+
+.preview-btn {
+    margin-left: auto;
+    font-size: 0.9rem;
+    gap: 4px;
+    width: auto;
+    padding: 0 12px;
+}
+
+.editor-textarea {
+    border-radius: 0 0 10px 10px !important;
+    border-top: none !important;
+}
+
+/* Предпросмотр */
+.preview-panel {
+    margin-top: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.preview-panel.hidden { display: none; }
+
+.preview-header {
+    padding: 10px 16px;
+    background: var(--bg-secondary);
+    font-weight: 600;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.preview-content {
+    padding: 16px;
+    min-height: 100px;
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.preview-content :first-child { margin-top: 0; }
+.preview-content :last-child { margin-bottom: 0; }
+
+/* Дополнительные опции */
+.form-details {
+    margin: 24px 0;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.form-details summary {
+    padding: 14px 20px;
+    background: var(--bg-secondary);
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-details summary::-webkit-details-marker { display: none; }
+
+.details-content {
+    padding: 16px 20px;
+    background: var(--bg-card);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.checkbox-label input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+}
+
+/* Кнопки */
+.form-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-color);
+}
+
+.btn-lg {
+    padding: 14px 32px;
+    font-size: 1.05rem;
+}
+
+.form-status {
+    margin-left: auto;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+/* Справка по Markdown */
+.help-card { margin-top: 24px; }
+
+.markdown-help-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.help-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.help-item code {
+    background: var(--bg-card);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+}
+
+.help-item span {
+    color: var(--text-muted);
+}
+
+.help-item a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .page-title { font-size: 1.4rem; }
+    
+    .editor-toolbar {
+        justify-content: flex-start;
+    }
+    
+    .preview-btn {
+        margin-left: 0;
+        width: 100%;
+        margin-top: 8px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .form-status {
+        margin-left: 0;
+        text-align: center;
+    }
+    
+    .markdown-help-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+// ==========================================
+// РЕДАКТОР И ПРЕДПРОСМОТР
+// ==========================================
+
+let hasUnsavedChanges = false;
+let formSubmitted = false;
+
+// Счётчик символов в заголовке
+document.getElementById('title').addEventListener('input', function() {
+    document.getElementById('titleCount').textContent = this.value.length;
+    markAsChanged();
+});
+document.getElementById('titleCount').textContent = document.getElementById('title').value.length;
+
+// Отслеживание изменений в textarea
+document.getElementById('content').addEventListener('input', function() {
+    markAsChanged();
+});
+
+// Отслеживание изменений в select (если есть)
+const categorySelect = document.getElementById('category_id');
+if (categorySelect) {
+    categorySelect.addEventListener('change', markAsChanged);
+}
+
+// Отметка формы как изменённой
+function markAsChanged() {
+    hasUnsavedChanges = true;
+}
+
+// Предупреждение при закрытии страницы
+window.addEventListener('beforeunload', function(e) {
+    if (hasUnsavedChanges && !formSubmitted) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+    }
+});
+
+// Сброс флага при успешной отправке
+document.getElementById('createTopicForm').addEventListener('submit', function() {
+    formSubmitted = true;
+    hasUnsavedChanges = false;
+    
+    const btn = document.getElementById('submitBtn');
+    const status = document.getElementById('formStatus');
+    
+    btn.disabled = true;
+    btn.innerHTML = '🔄 Публикация...';
+    status.textContent = '';
+});
+
+// Вставка Markdown
+function insertMarkdown(prefix, suffix, placeholder) {
+    const textarea = document.getElementById('content');
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = textarea.value.substring(start, end) || placeholder;
+    
+    const newText = textarea.value.substring(0, start) + prefix + selected + suffix + textarea.value.substring(end);
+    textarea.value = newText;
+    
+    markAsChanged();
+    
+    // Установить курсор после вставленного текста
+    const newCursorPos = start + prefix.length + selected.length;
+    textarea.focus();
+    textarea.setSelectionRange(newCursorPos, newCursorPos);
+    
+    // Обновить предпросмотр если открыт
+    if (!document.getElementById('preview').classList.contains('hidden')) {
+        updatePreview();
+    }
+}
+
+// Переключение предпросмотра
+function togglePreview() {
+    const preview = document.getElementById('preview');
+    const textarea = document.getElementById('content');
+    
+    if (preview.classList.contains('hidden')) {
+        updatePreview();
+        preview.classList.remove('hidden');
+        textarea.style.display = 'none';
+    } else {
+        preview.classList.add('hidden');
+        textarea.style.display = 'block';
+        textarea.focus();
+    }
+}
+
+// Обновление предпросмотра (базовый Markdown)
+function updatePreview() {
+    const content = document.getElementById('content').value;
+    const preview = document.getElementById('previewContent');
+    
+    // Простой парсинг Markdown
+    let html = content
+        // Экранирование HTML
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        // Жирный
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        // Курсив
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        // Инлайн-код
+        .replace(/`(.+?)`/g, '<code>$1</code>')
+        // Ссылки
+        .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+        // Изображения
+        .replace(/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;">')
+        // Цитаты
+        .replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>')
+        // Заголовки
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+        // Списки
+        .replace(/^- (.+)$/gm, '<li>$1</li>')
+        // Блоки кода
+        .replace(/```(\w+)?\n([\s\S]+?)```/g, '<pre><code class="language-$1">$2</code></pre>')
+        // Переносы строк
+        .replace(/\n(?!(<|<\/))/g, '<br>');
+    
+    // Обёртка списков
+    html = html.replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>');
+    
+    preview.innerHTML = html;
+}
+
+// Справка по Markdown
+function openMarkdownHelp() {
+    const help = document.querySelector('.help-card');
+    if (help) {
+        help.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        help.style.animation = 'pulse 0.5s ease';
+        setTimeout(() => help.style.animation = '', 500);
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,450 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ user.username }} | Профиль{% endblock %}
+
+{% block content %}
+<div class="ultimate-profile">
+    
+    <!-- Hero Section с фоном -->
+    <div class="profile-hero-ultimate" style="background: linear-gradient(135deg, {{ RANKS[user.role].color }}20 0%, var(--bg-primary) 100%)">
+        <div class="hero-particles"></div>
+        
+        <div class="container hero-content">
+            <!-- Левая колонка: Аватар + Быстрая инфа -->
+            <div class="hero-left">
+                <div class="avatar-mega-wrapper" style="--role-color: {{ RANKS[user.role].color }}">
+                    <div class="avatar-ring-1"></div>
+                    <div class="avatar-ring-2"></div>
+                    <div class="avatar-ring-3"></div>
+                    <img src="{{ user.avatar }}" alt="{{ user.username }}" class="avatar-mega" 
+                         onerror="this.src='https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg'">
+                    <div class="avatar-badge {{ user.role }}">
+                        {{ RANKS[user.role].icon }}
+                    </div>
+                </div>
+                
+                <div class="quick-stats">
+                    <div class="quick-stat">
+                        <span class="stat-number">{{ days_registered }}</span>
+                        <span class="stat-label">дней на форуме</span>
+                    </div>
+                    <div class="quick-stat">
+                        <!-- ✅ ПРОВЕРКА ПРИВАТНОСТИ: показываем время только если разрешено -->
+                        {% set can_see_activity = current_user.is_authenticated and (user.id == current_user.id or user.show_activity) %}
+                        {% if can_see_activity %}
+                            {% set minutes_ago = ((datetime.utcnow() - user.last_login).total_seconds() / 60) | round %}
+                            <span class="stat-number">{{ minutes_ago }}</span>
+                            <span class="stat-label">минут назад</span>
+                        {% else %}
+                            <span class="stat-number">🔒</span>
+                            <span class="stat-label">Скрыто</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if user.id == current_user.id %}
+                <div class="quick-actions">
+                    <a href="{{ url_for('user.settings') }}" class="btn-action">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        Редактировать
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Правая колонка: Инфо + Статистика -->
+            <div class="hero-right">
+                <div class="user-identity">
+                    <h1 class="display-name">{{ user.username }}</h1>
+                    <div class="identity-badges">
+                        {{ render_rank(user) }}
+                        {{ render_flags(user) }}
+                        {% if user.custom_title %}
+                        <span class="custom-title-badge">{{ user.custom_title }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="user-bio">
+                    <p class="bio-text">{{ user.custom_title or 'Новый участник сообщества TW-FORUM. Активно развивается и изучает возможности платформы.' }}</p>
+                </div>
+
+                <div class="hero-stats-grid">
+                    <div class="hero-stat-card">
+                        <div class="stat-icon-wrapper">📝</div>
+                        <div class="stat-value-animated" data-value="{{ topics_count }}">0</div>
+                        <div class="stat-label">Тем создано</div>
+                        <div class="stat-trend {% if topics_count > 5 %}positive{% endif %}">
+                            {% if topics_count > 10 %}🔥 Активный автор{% elif topics_count > 0 %}📈 Растёт{% else %}💡 Будь первым!{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="hero-stat-card">
+                        <div class="stat-icon-wrapper">💬</div>
+                        <div class="stat-value-animated" data-value="{{ posts_count }}">0</div>
+                        <div class="stat-label">Сообщений</div>
+                        <div class="stat-trend {% if posts_count > 20 %}positive{% endif %}">
+                            {% if posts_count > 50 %}🎯 Оратор{% elif posts_count > 10 %}💬 Говорит{% else %}📢 Начни общаться!{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="hero-stat-card">
+                        <div class="stat-icon-wrapper">🏆</div>
+                        <div class="stat-value-animated" data-value="{{ achievements_count|default(1) }}">0</div>
+                        <div class="stat-label">Достижений</div>
+                        <div class="stat-trend positive">
+                            🎖️ Продолжай в том же духе!
+                        </div>
+                    </div>
+                    
+                    <div class="hero-stat-card">
+                        <div class="stat-icon-wrapper">⭐</div>
+                        <div class="stat-value-animated" data-value="{{ reputation|default(0) }}">0</div>
+                        <div class="stat-label">Репутация</div>
+                        <div class="stat-trend {% if reputation|default(0) > 10 %}positive{% endif %}">
+                            {% if reputation|default(0) > 50 %}🌟 Легенда{% elif reputation|default(0) > 10 %}👍 Уважаем{% else %}📈 Копи карму!{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Level Progress Bar -->
+    <div class="level-progress-section">
+        <div class="container">
+            <div class="level-info">
+                <div class="level-badge">
+                    <span class="level-number">{{ user_level|default(1) }}</span>
+                    <span class="level-name">{{ level_name|default('Новичок') }}</span>
+                </div>
+                <div class="xp-bar-wrapper">
+                    <div class="xp-bar-fill" style="width: {{ xp_percentage|default(0) }}%"></div>
+                </div>
+                <div class="xp-text">
+                    <span>{{ current_xp|default(0) }} / {{ next_level_xp|default(100) }} XP</span>
+                    <span>{{ xp_to_next|default(100) }} XP до следующего уровня</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="container profile-main-grid">
+        
+        <!-- Левая колонка -->
+        <div class="profile-sidebar">
+            
+            <!-- Навигация по вкладкам -->
+            <div class="sidebar-card">
+                <h3 class="sidebar-title">📂 Разделы</h3>
+                <nav class="sidebar-nav">
+                    <a href="#overview" class="nav-link active" onclick="switchTab('overview')">
+                        <span class="nav-icon">📊</span>
+                        <span>Обзор</span>
+                    </a>
+                    <a href="#topics" class="nav-link" onclick="switchTab('topics')">
+                        <span class="nav-icon">📝</span>
+                        <span>Темы</span>
+                        <span class="nav-badge">{{ topics_count }}</span>
+                    </a>
+                    <a href="#posts" class="nav-link" onclick="switchTab('posts')">
+                        <span class="nav-icon">💬</span>
+                        <span>Сообщения</span>
+                        <span class="nav-badge">{{ posts_count }}</span>
+                    </a>
+                    <a href="#activity" class="nav-link" onclick="switchTab('activity')">
+                        <span class="nav-icon">📈</span>
+                        <span>Активность</span>
+                    </a>
+                    {% if user.id == current_user.id %}
+                    <a href="#settings" class="nav-link" onclick="switchTab('settings')">
+                        <span class="nav-icon">⚙️</span>
+                        <span>Настройки</span>
+                    </a>
+                    {% endif %}
+                </nav>
+            </div>
+
+            <!-- Информация -->
+            <div class="sidebar-card">
+                <h3 class="sidebar-title">ℹ️ Информация</h3>
+                <div class="info-list">
+                    <div class="info-item">
+                        <span class="info-label">Steam ID:</span>
+                        <span class="info-value">{{ user.steam_id }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Регистрация:</span>
+                        <span class="info-value">{{ user.created_at.strftime('%d.%m.%Y') }}</span>
+                    </div>
+                    
+                    <!-- ✅ ПРОВЕРКА ПРИВАТНОСТИ: последний вход -->
+                    {% set can_see_activity = current_user.is_authenticated and (user.id == current_user.id or user.show_activity) %}
+                    <div class="info-item">
+                        <span class="info-label">Последний вход:</span>
+                        {% if can_see_activity %}
+                            <span class="info-value">{{ user.last_login.strftime('%d.%m.%Y %H:%M') }}</span>
+                        {% else %}
+                            <span class="info-value private">🔒 Скрыто пользователем</span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- ✅ ПРОВЕРКА ПРИВАТНОСТИ: статус онлайна -->
+                    <div class="info-item">
+                        <span class="info-label">Статус:</span>
+                        {% if current_user.is_authenticated and (user.id == current_user.id or user.show_online_status) %}
+                            {% set seconds_since_login = (datetime.utcnow() - user.last_login).total_seconds() %}
+                            <span class="info-value status-{{ 'online' if seconds_since_login < 900 else 'offline' }}">
+                                {{ '🟢 В сети' if seconds_since_login < 900 else '⚫ Оффлайн' }}
+                            </span>
+                        {% else %}
+                            <span class="info-value private">🔒 Скрыто</span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- ✅ ПРОВЕРКА ПРИВАТНОСТИ: email (если добавишь поле) -->
+                    {% if user.show_email and current_user.is_authenticated %}
+                    <div class="info-item">
+                        <span class="info-label">Email:</span>
+                        <span class="info-value">{{ user.email or 'Не указан' }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Достижения -->
+            <div class="sidebar-card">
+                <h3 class="sidebar-title">🏆 Достижения</h3>
+                <div class="achievements-showcase">
+                    {% if days_registered > 0 %}
+                    <div class="achievement-item rare">
+                        <span class="ach-icon">🎖️</span>
+                        <div class="ach-info">
+                            <span class="ach-name">Ветеран</span>
+                            <span class="ach-desc">{{ days_registered }} дней на форуме</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if posts_count > 10 %}
+                    <div class="achievement-item uncommon">
+                        <span class="ach-icon">💬</span>
+                        <div class="ach-info">
+                            <span class="ach-name">Оратор</span>
+                            <span class="ach-desc">{{ posts_count }} сообщений</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if topics_count > 5 %}
+                    <div class="achievement-item uncommon">
+                        <span class="ach-icon">📝</span>
+                        <div class="ach-info">
+                            <span class="ach-name">Автор</span>
+                            <span class="ach-desc">{{ topics_count }} тем</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if user.role in ['owner', 's_owner', 'main_admin', 'admin'] %}
+                    <div class="achievement-item legendary">
+                        <span class="ach-icon">👑</span>
+                        <div class="ach-info">
+                            <span class="ach-name">Администрация</span>
+                            <span class="ach-desc">Член команды</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if user.has_flag('donator') %}
+                    <div class="achievement-item legendary">
+                        <span class="ach-icon">💎</span>
+                        <div class="ach-info">
+                            <span class="ach-name">Спонсор</span>
+                            <span class="ach-desc">Поддержал проект</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Правая колонка: Контент -->
+        <div class="profile-content-area">
+            
+            <!-- Вкладка: Обзор -->
+            <div id="tab-overview" class="tab-panel active">
+                <div class="content-grid-2">
+                    
+                    <!-- Последние темы -->
+                    <div class="content-card-large">
+                        <div class="card-header">
+                            <h3 class="card-title">📝 Последние темы</h3>
+                            <a href="{{ url_for('user.my_topics') }}" class="card-link">Все темы →</a>
+                        </div>
+                        {% if recent_topics %}
+                        <div class="topics-compact-list">
+                            {% for topic in recent_topics %}
+                            <a href="{{ url_for('forum.topic', topic_id=topic.id) }}" class="topic-compact-item">
+                                <div class="topic-compact-icon" style="background: {{ topic.category.color }}20">
+                                    {{ topic.category.icon }}
+                                </div>
+                                <div class="topic-compact-info">
+                                    <h4 class="topic-compact-title">{{ topic.title }}</h4>
+                                    <div class="topic-compact-meta">
+                                        <span class="topic-category">{{ topic.category.title }}</span>
+                                        <span class="topic-date">{{ topic.created_at.strftime('%d.%m.%Y') }}</span>
+                                    </div>
+                                </div>
+                                <div class="topic-compact-stats">
+                                    <span>👁 {{ topic.views }}</span>
+                                    <span>💬 {{ topic.posts|length - 1 }}</span>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="empty-state-cool">
+                            <div class="empty-icon">📭</div>
+                            <h4>Тем пока нет</h4>
+                            <p>Создай первую тему и стань автором!</p>
+                            <a href="{{ url_for('forum.index') }}" class="btn btn-primary">Перейти на форум</a>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Активность -->
+                    <div class="content-card-large">
+                        <div class="card-header">
+                            <h3 class="card-title">📊 Статистика</h3>
+                        </div>
+                        <div class="stats-detailed">
+                            <div class="stat-row">
+                                <span class="stat-row-label">Активность за неделю</span>
+                                <div class="stat-row-bar">
+                                    <div class="stat-row-fill" style="width: {{ weekly_activity|default(65) }}%"></div>
+                                </div>
+                                <span class="stat-row-value">{{ weekly_activity|default(65) }}%</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-row-label">Популярность тем</span>
+                                <div class="stat-row-bar">
+                                    <div class="stat-row-fill" style="width: {{ popularity|default(40) }}%"></div>
+                                </div>
+                                <span class="stat-row-value">{{ popularity|default(40) }}%</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-row-label">Вовлечённость</span>
+                                <div class="stat-row-bar">
+                                    <div class="stat-row-fill" style="width: {{ engagement|default(75) }}%"></div>
+                                </div>
+                                <span class="stat-row-value">{{ engagement|default(75) }}%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="quick-facts">
+                            <h4>💡 Интересные факты</h4>
+                            <ul class="facts-list">
+                                <li>🎯 Ты {{ 'очень' if days_registered > 30 else 'новенький' }} на форуме</li>
+                                <li>📈 {% if posts_count > topics_count * 3 %}Чаще отвечаешь, чем создаёшь темы{% else %}Создаёшь качественные темы{% endif %}</li>
+                                <li>🏆 {{ achievements_count|default(1) }} достижений разблокировано</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Остальные вкладки (заглушки) -->
+            <div id="tab-topics" class="tab-panel">
+                <div class="content-card-large">
+                    <h3>📝 Все темы</h3>
+                    <a href="{{ url_for('user.my_topics') }}" class="btn btn-primary">Перейти к полным темам →</a>
+                </div>
+            </div>
+
+            <div id="tab-posts" class="tab-panel">
+                <div class="content-card-large">
+                    <h3>💬 Все сообщения</h3>
+                    <a href="{{ url_for('user.my_posts') }}" class="btn btn-primary">Перейти к сообщениям →</a>
+                </div>
+            </div>
+
+            <div id="tab-activity" class="tab-panel">
+                <div class="content-card-large">
+                    <h3>📈 Детальная активность</h3>
+                    <p>Здесь будет календарь активности и подробная статистика</p>
+                </div>
+            </div>
+
+            <div id="tab-settings" class="tab-panel">
+                <div class="content-card-large">
+                    <h3>⚙️ Настройки профиля</h3>
+                    <a href="{{ url_for('user.settings') }}" class="btn btn-primary">Открыть настройки →</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+// Анимация чисел при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    const animatedValues = document.querySelectorAll('.stat-value-animated');
+    
+    animatedValues.forEach(el => {
+        const target = parseInt(el.getAttribute('data-value'));
+        const duration = 1500;
+        const step = target / (duration / 16);
+        let current = 0;
+        
+        const timer = setInterval(() => {
+            current += step;
+            if (current >= target) {
+                el.textContent = target;
+                clearInterval(timer);
+            } else {
+                el.textContent = Math.floor(current);
+            }
+        }, 16);
+    });
+});
+
+// Переключение вкладок
+function switchTab(tabName) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    
+    document.getElementById('tab-' + tabName).classList.add('active');
+    event.target.closest('.nav-link').classList.add('active');
+}
+</script>
+
+<!-- ✅ СТИЛИ ДЛЯ ПРИВАТНЫХ ЭЛЕМЕНТОВ -->
+<style>
+.info-value.private {
+    color: var(--text-muted);
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.info-value.private::before {
+    content: '🔒';
+    font-size: 0.9rem;
+}
+
+.quick-stat .stat-number.private {
+    color: var(--text-muted);
+}
+
+/* Подсветка для владельца профиля - видит свои настройки */
+.info-item:has(.private) {
+    opacity: 0.7;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,797 @@
+{% extends 'base.html' %}
+
+{% block title %}Редактирование: {{ user.username }} | Админ-панель{% endblock %}
+
+{% block content %}
+<div class="admin-page-wrapper">
+    
+    <!-- Шапка -->
+    <div class="admin-page-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1 class="page-title">
+                        <span class="title-icon">✏️</span>
+                        Редактирование пользователя
+                    </h1>
+                    <p class="page-subtitle">{{ user.username }}</p>
+                </div>
+                <div class="header-stats">
+                    <a href="{{ url_for('admin.users') }}" class="btn btn-outline">
+                        <span class="btn-icon">←</span>
+                        <span>Назад к списку</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Навигация -->
+            <nav class="admin-breadcrumb">
+                <a href="{{ url_for('admin.dashboard') }}" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    <span>Дашборд</span>
+                </a>
+                <a href="{{ url_for('admin.users') }}" class="nav-item active">
+                    <span class="nav-icon">👥</span>
+                    <span>Пользователи</span>
+                </a>
+                <a href="{{ url_for('admin.topics') }}" class="nav-item">
+                    <span class="nav-icon">📝</span>
+                    <span>Темы</span>
+                </a>
+                <a href="{{ url_for('admin.logs') }}" class="nav-item">
+                    <span class="nav-icon">📜</span>
+                    <span>Логи</span>
+                </a>
+                <a href="{{ url_for('admin.settings') }}" class="nav-item">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Настройки</span>
+                </a>
+                <div class="nav-divider"></div>
+                <a href="{{ url_for('core.index') }}" class="nav-item nav-secondary">
+                    <span class="nav-icon">←</span>
+                    <span>На сайт</span>
+                </a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Основной контент -->
+    <div class="container admin-page-content">
+        
+        <div class="content-card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <span class="title-icon">👤</span>
+                    Информация о пользователе
+                </h2>
+            </div>
+            
+            <div class="card-body">
+                <!-- Профиль пользователя -->
+                <div class="user-profile-header">
+                    <img src="{{ user.avatar or 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg' }}" 
+                         alt="{{ user.username }}" class="profile-avatar">
+                    <div class="profile-info">
+                        <h3 class="profile-name">{{ user.username }}</h3>
+                        {% if user.custom_title %}
+                        <p class="profile-title">{{ user.custom_title }}</p>
+                        {% endif %}
+                        <div class="profile-meta">
+                            <span class="meta-item">
+                                <span class="meta-icon">🆔</span>
+                                <code>{{ user.steam_id }}</code>
+                            </span>
+                            <span class="meta-item">
+                                <span class="meta-icon">📅</span>
+                                {{ user.created_at.strftime('%d.%m.%Y') }}
+                            </span>
+                            <span class="meta-item">
+                                <span class="meta-icon">🔑</span>
+                                <span class="role-badge {{ user.role }}">{{ user.role }}</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Форма редактирования -->
+                <form method="POST" class="edit-form">
+                    
+                    <div class="form-section">
+                        <h3 class="section-title">🎭 Роль и права</h3>
+                        
+                        <div class="form-group">
+                            <label for="role">Роль пользователя</label>
+                            <select id="role" name="role" class="form-select" {{ 'disabled' if user.role in ['owner', 's_owner'] and current_user.role != 'owner' else '' }}>
+                                {% for code, rank in roles.items() %}
+                                    {% if code not in ['owner', 's_owner'] or current_user.role == 'owner' %}
+                                    <option value="{{ code }}" {{ 'selected' if user.role == code else '' }}>
+                                        {{ rank.icon }} {{ rank.name }}
+                                    </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            {% if user.role in ['owner', 's_owner'] and current_user.role != 'owner' %}
+                            <small class="text-warning">⚠️ Изменение роли владельца запрещено</small>
+                            {% endif %}
+                        </div>
+
+                        <!-- ✅ ОБНОВЛЁННЫЕ ФЛАГИ С ГРУППИРОВКОЙ И ОПИСАНИЯМИ -->
+                        <div class="form-group">
+                            <label>🏷️ Флаги пользователя</label>
+                            <small class="text-muted mb-2">Отметьте флаги, которые есть у этого пользователя</small>
+                            
+                            <!-- ✅ FIX: используем переменную flags из роута, а не вызов функции -->
+                            {% set flag_categories = flags %}
+                            
+                            {% for category, flags_list in flag_categories.items() %}
+                                {% if flags_list %}
+                                <div class="flag-category">
+                                    <h4 class="category-title">
+                                        {% if category == 'premium' %}💎 Премиум
+                                        {% elif category == 'special' %}🎖️ Особые
+                                        {% elif category == 'technical' %}🔧 Технические
+                                        {% else %}📋 Другие{% endif %}
+                                    </h4>
+                                    
+                                    <div class="flags-grid">
+                                        {% for flag in flags_list %}
+                                        <label class="flag-checkbox" title="{{ flag.description }}">
+                                            <input type="checkbox" name="flags" value="{{ flag.code }}" 
+                                                   {{ 'checked' if flag.code in user.get_flags() else '' }}>
+                                            <span class="flag-icon" style="color: {{ flag.color }}">{{ flag.icon }}</span>
+                                            <div class="flag-info">
+                                                <span class="flag-name">{{ flag.name }}</span>
+                                                <small class="flag-desc">{{ flag.description }}</small>
+                                            </div>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3 class="section-title">⚙️ Статус аккаунта</h3>
+                        
+                        <div class="status-card {{ 'banned' if user.is_banned else 'active' }}">
+                            <div class="status-icon">
+                                {% if user.is_banned %}⛔{% else %}✅{% endif %}
+                            </div>
+                            <div class="status-info">
+                                <h4>
+                                    {% if user.is_banned %}
+                                    <span class="text-danger">Аккаунт забанен</span>
+                                    {% else %}
+                                    <span class="text-success">Аккаунт активен</span>
+                                    {% endif %}
+                                </h4>
+                                {% if user.is_banned and user.ban_reason %}
+                                <p class="ban-reason">Причина: {{ user.ban_reason }}</p>
+                                {% if user.ban_expires %}
+                                <p class="ban-expiry">До: {{ user.ban_expires.strftime('%d.%m.%Y %H:%M') }}</p>
+                                {% endif %}
+                                {% endif %}
+                            </div>
+                            <div class="status-actions">
+                                {% if user.is_banned %}
+                                <a href="{{ url_for('admin.user_unban', user_id=user.id) }}" 
+                                   class="btn btn-success" 
+                                   onclick="return confirm('Разбанить пользователя {{ user.username }}?')">
+                                    ✅ Разбанить
+                                </a>
+                                {% else %}
+                                <button type="button" class="btn btn-danger" 
+                                        onclick="document.getElementById('ban-modal').classList.add('active')">
+                                    🔨 Забанить
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3 class="section-title">🔗 Социальные связи</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="discord">Discord</label>
+                                <input type="text" id="discord" name="discord" 
+                                       value="{{ user.discord or '' }}" 
+                                       class="form-input" placeholder="username#1234">
+                            </div>
+                            <div class="form-group">
+                                <label for="telegram">Telegram</label>
+                                <input type="text" id="telegram" name="telegram" 
+                                       value="{{ user.telegram or '' }}" 
+                                       class="form-input" placeholder="@username">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            💾 Сохранить изменения
+                        </button>
+                        <a href="{{ url_for('admin.users') }}" class="btn btn-outline">
+                            Отмена
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно бана -->
+<div class="modal" id="ban-modal">
+    <div class="modal-overlay" onclick="closeBanModal()"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>⛔ Забанить пользователя</h3>
+            <button class="modal-close" onclick="closeBanModal()">×</button>
+        </div>
+        <form method="POST" action="{{ url_for('admin.user_ban', user_id=user.id) }}">
+            <div class="modal-body">
+                <p>Вы собираетесь забанить <strong>{{ user.username }}</strong></p>
+                
+                <div class="form-group">
+                    <label for="ban_reason">Причина бана *</label>
+                    <textarea id="ban_reason" name="ban_reason" rows="3" 
+                              class="form-textarea" required 
+                              placeholder="Опишите причину нарушения..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="ban_days">Длительность (дней)</label>
+                    <input type="number" id="ban_days" name="ban_days" 
+                           class="form-input" min="1" max="365" placeholder="Оставьте пустым для перманентного">
+                    <small>0 или пусто = навсегда</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeBanModal()">Отмена</button>
+                <button type="submit" class="btn btn-danger">⛔ Забанить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+/* ==========================================
+   СТИЛИ СТРАНИЦЫ РЕДАКТИРОВАНИЯ
+   ========================================== */
+
+.admin-page-header {
+    background: linear-gradient(135deg, var(--accent-dim) 0%, var(--bg-secondary) 100%);
+    border-bottom: 1px solid var(--border-color);
+    padding: 40px 0 30px;
+    margin-bottom: 32px;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.header-left { flex: 1; }
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0 0 8px 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.title-icon { font-size: 2.2rem; }
+.page-subtitle { margin: 0; color: var(--text-secondary); font-size: 1rem; }
+
+.header-stats { display: flex; gap: 12px; }
+
+.admin-breadcrumb {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.nav-item:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+    transform: translateY(-2px);
+}
+
+.nav-item.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+}
+
+.nav-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border-color);
+    margin: 0 8px;
+}
+
+.nav-secondary { margin-left: auto; }
+
+.admin-page-content { max-width: 900px; }
+
+.content-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.card-title {
+    font-size: 1.3rem;
+    margin: 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.card-body { padding: 32px; }
+
+.user-profile-header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 24px;
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    margin-bottom: 32px;
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--border-color);
+}
+
+.profile-info { flex: 1; }
+
+.profile-name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 0 0 4px 0;
+    color: var(--text-primary);
+}
+
+.profile-title {
+    margin: 0 0 12px 0;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.profile-meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.meta-icon { font-size: 1.1rem; }
+
+.edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.form-section {
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.form-section:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.section-title {
+    font-size: 1.1rem;
+    margin: 0 0 20px 0;
+    color: var(--text-primary);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.form-group:last-child { margin-bottom: 0; }
+
+.form-group label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.form-group small {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.text-muted { color: var(--text-muted) !important; }
+.mb-2 { margin-bottom: 8px !important; }
+
+.form-select, .form-input, .form-textarea {
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.form-select:focus, .form-input:focus, .form-textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.form-textarea { resize: vertical; min-height: 80px; }
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+/* ✅ ОБНОВЛЁННЫЕ СТИЛИ ДЛЯ ФЛАГОВ */
+.flag-category {
+    margin-bottom: 24px;
+}
+
+.flag-category:last-child {
+    margin-bottom: 0;
+}
+
+.category-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.flags-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+}
+
+.flag-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.flag-checkbox:hover {
+    border-color: var(--accent);
+    background: var(--bg-card-hover);
+    transform: translateY(-1px);
+}
+
+.flag-checkbox input {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    cursor: pointer;
+    accent-color: var(--accent);
+}
+
+.flag-icon {
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.flag-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.flag-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: block;
+    margin-bottom: 2px;
+}
+
+.flag-desc {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    display: block;
+    line-height: 1.3;
+}
+
+/* Статус карточка */
+.status-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+}
+
+.status-card.active {
+    border-color: rgba(46, 204, 113, 0.5);
+    background: rgba(46, 204, 113, 0.05);
+}
+
+.status-card.banned {
+    border-color: rgba(231, 76, 60, 0.5);
+    background: rgba(231, 76, 60, 0.05);
+}
+
+.status-icon {
+    font-size: 2.5rem;
+}
+
+.status-info { flex: 1; }
+
+.status-info h4 {
+    margin: 0 0 4px 0;
+    font-size: 1.1rem;
+}
+
+.ban-reason, .ban-expiry {
+    margin: 4px 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.text-success { color: #2ecc71; }
+.text-danger { color: #e74c3c; }
+.text-warning { color: #f1c40f; }
+
+.status-actions { display: flex; gap: 10px; }
+
+/* Кнопки */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-primary { background: var(--accent); color: #000; }
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(var(--accent-rgb, 231, 76, 60), 0.3);
+}
+
+.btn-outline {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+.btn-outline:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+    border-color: var(--accent);
+}
+
+.btn-success { background: #2ecc71; color: #fff; }
+.btn-success:hover { background: #27ae60; }
+
+.btn-danger { background: #e74c3c; color: #fff; }
+.btn-danger:hover { background: #c0392b; }
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Модальное окно */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 1000;
+}
+
+.modal.active { display: flex; align-items: center; justify-content: center; }
+
+.modal-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    position: relative;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: modalSlide 0.3s ease;
+}
+
+@keyframes modalSlide {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--text-primary);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.modal-close:hover { color: var(--text-primary); }
+
+.modal-body { padding: 24px; }
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 20px 24px;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+/* Бейджи ролей */
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.role-badge.owner { background: rgba(255, 215, 0, 0.2); color: #ffd700; border-color: #ffd700; }
+.role-badge.admin { background: rgba(41, 128, 185, 0.2); color: #2980b9; border-color: #2980b9; }
+.role-badge.moderator { background: rgba(46, 204, 113, 0.2); color: #2ecc71; border-color: #2ecc71; }
+.role-badge.player { background: var(--bg-secondary); color: var(--text-secondary); }
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .header-content { flex-direction: column; gap: 16px; }
+    .header-stats { align-self: flex-end; }
+    .admin-breadcrumb { justify-content: center; }
+    .nav-secondary { margin-left: 0; }
+    
+    .user-profile-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .profile-meta { justify-content: center; }
+    
+    .form-row { grid-template-columns: 1fr; }
+    
+    .flags-grid { grid-template-columns: 1fr; }
+    
+    .status-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .status-actions {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn { width: 100%; justify-content: center; }
+}
+</style>
+
+<script>
+// ==========================================
+// МОДАЛЬНОЕ ОКНО БАНА
+// ==========================================
+function openBanModal() {
+    document.getElementById('ban-modal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeBanModal() {
+    document.getElementById('ban-modal').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+// Закрытие по Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeBanModal();
+});
+</script>
+{% endblock %}

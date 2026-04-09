@@ -1,0 +1,539 @@
+{% extends 'base.html' %}
+
+{% block title %}Правила форума | {{ Setting.get('forum_name', 'TW-FORUM') }}{% endblock %}
+
+{% block content %}
+<div class="rules-page-wrapper">
+    <div class="container">
+        <!-- Шапка -->
+        <div class="rules-header">
+            <h1 class="rules-title">📜 Правила форума</h1>
+            <p class="rules-subtitle">Последнее обновление: 08.04.2025 • Версия 2.1</p>
+        </div>
+
+        <!-- Основное содержание -->
+        <div class="rules-content">
+            
+            <!-- Раздел 1 -->
+            <div class="rules-section">
+                <h2 class="rules-section-title">1. Общие положения</h2>
+                <div class="rules-text">
+                    <p><strong>1.1.</strong> Настоящие правила обязательны для всех пользователей форума.</p>
+                    <p><strong>1.2.</strong> Регистрация на форуме означает полное согласие с данными правилами.</p>
+                    <p><strong>1.3.</strong> Администрация оставляет за собой право изменять правила без предварительного уведомления. Актуальная версия всегда доступна на этой странице.</p>
+                    <p><strong>1.4.</strong> Незнание правил не освобождает от ответственности за их нарушение.</p>
+                    <p><strong>1.5.</strong> Решения администрации окончательны и обжалованию не подлежат, за исключением случаев явной ошибки.</p>
+                    <p><strong>1.6.</strong> Форум является частной собственностью. Администрация вправе отказать в доступе любому пользователю без объяснения причин.</p>
+                </div>
+            </div>
+
+            <!-- Раздел 2 -->
+            <div class="rules-section">
+                <h2 class="rules-section-title">2. Запрещённый контент</h2>
+                <div class="rules-text">
+                    <p><strong>2.1. Категорически запрещается публикация:</strong></p>
+                    <ul>
+                        <li>2.1.1. Материалов порнографического, эротического характера</li>
+                        <li>2.1.2. Контента, пропагандирующего насилие, жестокость, причинение вреда здоровью</li>
+                        <li>2.1.3. Информации о наркотических средствах, способах их изготовления и употребления</li>
+                        <li>2.1.4. Материалов, разжигающих межнациональную, религиозную, политическую рознь</li>
+                        <li>2.1.5. Призывов к экстремизму, терроризму, свержению конституционного строя</li>
+                        <li>2.1.6. Персональных данных третьих лиц без их согласия (адреса, телефоны, паспорта)</li>
+                        <li>2.1.7. Ссылок на ресурсы, нарушающие законодательство РФ</li>
+                    </ul>
+                    <p class="rules-note">⚠️ За нарушение данного раздела — <strong>перманентный бан</strong> без предупреждения.</p>
+                </div>
+            </div>
+
+            <!-- Раздел 3 -->
+            <div class="rules-section">
+                <h2 class="rules-section-title">3. Поведение и общение</h2>
+                <div class="rules-text">
+                    <p><strong>3.1. Запрещается:</strong></p>
+                    <ul>
+                        <li>3.1.1. Оскорблять других пользователей, переходить на личности, использовать унизительные прозвища</li>
+                        <li>3.1.2. Провоцировать конфликты, троллить, намеренно выводить собеседников из себя</li>
+                        <li>3.1.3. Использовать нецензурную лексику (мат), даже в завуалированной форме</li>
+                        <li>3.1.4. Писать капсом (заглавными буквами), кроме случаев цитирования или оформления</li>
+                        <li>3.1.5. Засорять чат/форум повторяющимися сообщениями, бессмысленным набором символов</li>
+                        <li>3.1.6. Создавать темы не в том разделе (оффтоп в тематических разделах)</li>
+                        <li>3.1.7. Рекламировать сторонние проекты, сервера, каналы без согласования с администрацией</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Раздел 4 -->
+            <div class="rules-section">
+                <h2 class="rules-section-title">4. Оформление сообщений и тем</h2>
+                <div class="rules-text">
+                    <p><strong>4.1. Требования к заголовкам тем:</strong></p>
+                    <ul>
+                        <li>4.1.1. Заголовок должен кратко и точно отражать суть вопроса</li>
+                        <li>4.1.2. Запрещены заголовки типа "Помогите", "Срочно", "Вопрос", "111"</li>
+                        <li>4.1.3. Максимальная длина заголовка — 200 символов</li>
+                    </ul>
+                    
+                    <p><strong>4.2. Требования к содержанию:</strong></p>
+                    <ul>
+                        <li>4.2.1. Сообщение должно быть читабельным, с абзацами и пунктуацией</li>
+                        <li>4.2.2. При описании проблемы указывайте: версию игры, моды, шаги воспроизведения</li>
+                        <li>4.2.3. Скриншоты и логи прикрепляйте через встроенный загрузчик или надёжные хостинги</li>
+                        <li>4.2.4. Перед созданием темы воспользуйтесь поиском — возможно, вопрос уже решён</li>
+                    </ul>
+                    
+                    <p><strong>4.3. Запрещено:</strong></p>
+                    <ul>
+                        <li>4.3.1. Создавать дубликаты тем (одна проблема — одна тема)</li>
+                        <li>4.3.2. Поднимать тему сообщением "ап", "поднимите", "где ответ?" чаще раза в 24 часа</li>
+                        <li>4.3.3. Редактировать сообщение до неузнаваемости после получения ответов</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Раздел 5 -->
+            <div class="rules-section">
+                <h2 class="rules-section-title">5. Профиль, аватар и подпись</h2>
+                <div class="rules-text">
+                    <p><strong>5.1. Аватар:</strong></p>
+                    <ul>
+                        <li>5.1.1. Максимальный размер: 200×200 пикселей, до 500 КБ</li>
+                        <li>5.1.2. Запрещены: порнография, насилие, политическая символика, реклама</li>
+                        <li>5.1.3. Анимированные GIF разрешены, но не должны мигать чаще 3 раз в секунду</li>
+                    </ul>
+                    
+                    <p><strong>5.2. Подпись:</strong></p>
+                    <ul>
+                        <li>5.2.1. Максимум 3 строки текста или 1 изображение высотой до 100 пикселей</li>
+                        <li>5.2.2. Запрещена реклама, ссылки на сторонние ресурсы, провокационный контент</li>
+                    </ul>
+                    
+                    <p><strong>5.3. Никнейм:</strong></p>
+                    <ul>
+                        <li>5.3.1. Запрещены ники, содержащие мат, оскорбления, имитацию администрации (Admin_, Mod_)</li>
+                        <li>5.3.2. Смена ника возможна не чаще 1 раза в 30 дней (через ЛС администрации)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Раздел 6 -->
+            <div class="rules-section">
+                <h2 class="rules-section-title">6. Нарушения и система наказаний</h2>
+                <div class="rules-text">
+                    <p><strong>6.1. Типы нарушений и санкции:</strong></p>
+                    
+                    <div class="penalty-table">
+                        <div class="penalty-row">
+                            <span class="penalty-type">⚠️ Лёгкое нарушение</span>
+                            <span class="penalty-desc">Оффтоп, незначительный флуд, единичное нарушение оформления</span>
+                            <span class="penalty-sanction">Предупреждение</span>
+                        </div>
+                        <div class="penalty-row">
+                            <span class="penalty-type">🟡 Среднее нарушение</span>
+                            <span class="penalty-desc">Оскорбление, спам, повторный оффтоп, обход предупреждений</span>
+                            <span class="penalty-sanction">Бан 1–3 дня</span>
+                        </div>
+                        <div class="penalty-row">
+                            <span class="penalty-type">🔴 Тяжёлое нарушение</span>
+                            <span class="penalty-desc">Мат, провокации, реклама, мультиаккаунт для обхода бана</span>
+                            <span class="penalty-sanction">Бан 7–30 дней</span>
+                        </div>
+                        <div class="penalty-row critical">
+                            <span class="penalty-type">❌ Критическое нарушение</span>
+                            <span class="penalty-desc">Порнография, экстремизм, угрозы, доксинг, взлом аккаунтов</span>
+                            <span class="penalty-sanction">Перманентный бан</span>
+                        </div>
+                    </div>
+                    
+                    <p><strong>6.2. Срок действия предупреждений:</strong></p>
+                    <ul>
+                        <li>6.2.1. Предупреждение автоматически снимается через 30 дней с момента выдачи</li>
+                        <li>6.2.2. При получении 3 активных предупреждений — автоматический бан на 7 дней</li>
+                        <li>6.2.3. После отбытия бана все предупреждения обнуляются</li>
+                    </ul>
+                    
+                    <p><strong>6.3. Особые случаи:</strong></p>
+                    <ul>
+                        <li>6.3.1. Бан за оскорбление администрации — от 14 дней до перманентного</li>
+                        <li>6.3.2. Повторное нарушение одного типа — срок бана увеличивается в 2 раза</li>
+                        <li>6.3.3. Обход бана через новый аккаунт — перманентный бан всех связанных аккаунтов</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Раздел 7 -->
+            <div class="rules-section">
+                <h2 class="rules-section-title">7. Жалобы и апелляции</h2>
+                <div class="rules-text">
+                    <p><strong>7.1. Подача жалобы:</strong></p>
+                    <ul>
+                        <li>7.1.1. Жалобы принимаются только через личные сообщения администрации или форму "Пожаловаться"</li>
+                        <li>7.1.2. В жалобе обязательно укажите: ссылку на сообщение/пользователя, суть нарушения, доказательства (скриншоты)</li>
+                        <li>7.1.3. Анонимные жалобы, жалобы без доказательств и жалобы "на всякий случай" не рассматриваются</li>
+                    </ul>
+                    
+                    <p><strong>7.2. Рассмотрение:</strong></p>
+                    <ul>
+                        <li>7.2.1. Срок рассмотрения жалобы — до 7 рабочих дней</li>
+                        <li>7.2.2. О результате вы будете уведомлены в ЛС или в теме жалобы</li>
+                        <li>7.2.3. Повторные жалобы по тому же вопросу без новых доказательств не принимаются</li>
+                    </ul>
+                    
+                    <p><strong>7.3. Апелляция на бан:</strong></p>
+                    <ul>
+                        <li>7.3.1. Апелляции принимаются только через 48 часов после выдачи бана</li>
+                        <li>7.3.2. В апелляции укажите: почему вы считаете бан несправедливым, что изменилось в вашем поведении</li>
+                        <li>7.3.3. Апелляции с оскорблениями, требованиями и ультиматумами отклоняются автоматически</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Раздел 8 -->
+            <div class="rules-section">
+                <h2 class="rules-section-title">8. Технические вопросы и безопасность</h2>
+                <div class="rules-text">
+                    <p><strong>8.1. Аккаунт:</strong></p>
+                    <ul>
+                        <li>8.1.1. Запрещена передача аккаунта третьим лицам</li>
+                        <li>8.1.2. При подозрении на взлом немедленно смените пароль и сообщите администрации</li>
+                        <li>8.1.3. Администрация не несёт ответственности за утерю аккаунта из-за слабого пароля</li>
+                    </ul>
+                    
+                    <p><strong>8.2. Безопасность:</strong></p>
+                    <ul>
+                        <li>8.2.1. Запрещено публиковать ссылки на фишинговые сайты, вирусы, стиллеры</li>
+                        <li>8.2.2. Обнаруженные уязвимости форума сообщайте только в ЛС администрации</li>
+                        <li>8.2.3. Публичное обсуждение уязвимостей приравнивается к попытке взлома</li>
+                    </ul>
+                    
+                    <p><strong>8.3. Модерация контента:</strong></p>
+                    <ul>
+                        <li>8.3.1. Все загружаемые файлы проверяются антивирусом. Подозрительные файлы удаляются</li>
+                        <li>8.3.2. Изображения с водяными знаками других ресурсов могут быть удалены</li>
+                        <li>8.3.3. Контент, нарушающий авторские права, удаляется по первому требованию правообладателя</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Раздел 9 -->
+            <div class="rules-section">
+                <h2 class="rules-section-title">9. Права и обязанности модераторов</h2>
+                <div class="rules-text">
+                    <p><strong>9.1. Модератор вправе:</strong></p>
+                    <ul>
+                        <li>9.1.1. Удалять сообщения и темы, нарушающие правила</li>
+                        <li>9.1.2. Закрывать, переносить, закреплять темы по своему усмотрению</li>
+                        <li>9.1.3. Выдавать предупреждения и баны в рамках своей компетенции</li>
+                        <li>9.1.4. Редактировать сообщения для исправления нарушений (с пометкой "изменено модератором")</li>
+                    </ul>
+                    
+                    <p><strong>9.2. Модератор обязан:</strong></p>
+                    <ul>
+                        <li>9.2.1. Действовать беспристрастно, не используя служебное положение в личных целях</li>
+                        <li>9.2.2. Аргументировать свои действия при запросе пользователя</li>
+                        <li>9.2.3. Соблюдать конфиденциальность служебной информации</li>
+                    </ul>
+                    
+                    <p><strong>9.3. Злоупотребление полномочиями:</strong></p>
+                    <ul>
+                        <li>9.3.1. Жалобы на действия модераторов рассматриваются старшей администрацией</li>
+                        <li>9.3.2. При подтверждении злоупотребления — снятие полномочий и возможные санкции</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Раздел 10 -->
+            <div class="rules-section">
+                <h2 class="rules-section-title">10. Заключительные положения</h2>
+                <div class="rules-text">
+                    <p><strong>10.1.</strong> Правила вступают в силу с момента публикации и действуют бессрочно.</p>
+                    <p><strong>10.2.</strong> Толкование правил осуществляется исключительно администрацией форума.</p>
+                    <p><strong>10.3.</strong> В спорных ситуациях приоритет имеет дух правил, а не их буква.</p>
+                    <p><strong>10.4.</strong> Администрация оставляет за собой право применять санкции, не указанные в правилах, в исключительных случаях.</p>
+                    <p><strong>10.5.</strong> Использование форума означает безоговорочное принятие всех условий настоящих правил.</p>
+                </div>
+            </div>
+
+            <!-- Футер с контактами -->
+            <div class="rules-footer">
+                <p>📱 <strong>Связь с администрацией:</strong></p>
+                <div class="contact-links">
+                    <a href="https://t.me/znxbq" target="_blank" class="contact-link telegram">
+                        <span class="contact-icon">✈️</span>
+                        <span>Telegram: @znxbq</span>
+                    </a>
+                    <a href="https://vk.com/letyn2" target="_blank" class="contact-link vk">
+                        <span class="contact-icon">💬</span>
+                        <span>VK: vk.com/letyn2</span>
+                    </a>
+                </div>
+                <p class="rules-disclaimer" style="margin-top: 20px; font-size: 0.85rem; color: var(--text-muted);">
+                    Правила могут быть изменены в любое время. Следите за обновлениями.
+                </p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+/* ==========================================
+   СТИЛИ СТРАНИЦЫ ПРАВИЛ
+   ========================================== */
+
+.rules-page-wrapper {
+    min-height: 100vh;
+    background: var(--bg-primary);
+    padding: 40px 0 80px;
+}
+
+.rules-header {
+    text-align: center;
+    margin-bottom: 48px;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, var(--accent-dim) 0%, var(--bg-secondary) 100%);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+}
+
+.rules-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 0 0 12px 0;
+    color: var(--text-primary);
+}
+
+.rules-subtitle {
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.rules-content {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.rules-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 32px;
+    transition: all 0.2s ease;
+}
+
+.rules-section:hover {
+    border-color: var(--border-hover);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+
+.rules-section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 20px 0;
+    color: var(--accent);
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.rules-text {
+    color: var(--text-secondary);
+    line-height: 1.8;
+}
+
+.rules-text p {
+    margin: 0 0 16px 0;
+}
+
+.rules-text ul {
+    margin: 12px 0 20px 24px;
+    padding: 0;
+}
+
+.rules-text li {
+    margin-bottom: 8px;
+}
+
+.rules-text strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.rules-text a {
+    color: var(--accent);
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+
+.rules-text a:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
+.rules-note {
+    background: rgba(241, 196, 15, 0.1);
+    border-left: 3px solid #f1c40f;
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 16px;
+    font-size: 0.95rem;
+}
+
+/* ==========================================
+   ТАБЛИЦА НАКАЗАНИЙ
+   ========================================== */
+
+.penalty-table {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.penalty-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 16px;
+    padding: 14px 20px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    align-items: center;
+    border-left: 4px solid var(--border-color);
+}
+
+.penalty-row.critical {
+    border-left-color: #e74c3c;
+    background: rgba(231, 76, 60, 0.05);
+}
+
+.penalty-type {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.penalty-desc {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.penalty-sanction {
+    font-weight: 700;
+    text-align: right;
+    padding: 6px 12px;
+    background: var(--bg-card);
+    border-radius: 8px;
+    color: var(--accent);
+}
+
+.penalty-row.critical .penalty-sanction {
+    background: #e74c3c;
+    color: #fff;
+}
+
+/* ==========================================
+   ФУТЕР И КОНТАКТЫ
+   ========================================== */
+
+.rules-footer {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    margin-top: 24px;
+}
+
+.rules-footer p {
+    margin: 8px 0;
+    color: var(--text-secondary);
+}
+
+.contact-links {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.contact-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.contact-link:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+    color: var(--text-primary);
+}
+
+.contact-link.telegram:hover {
+    background: rgba(0, 136, 204, 0.1);
+    border-color: #0088cc;
+    color: #0088cc;
+}
+
+.contact-link.vk:hover {
+    background: rgba(0, 119, 255, 0.1);
+    border-color: #0077ff;
+    color: #0077ff;
+}
+
+.contact-icon {
+    font-size: 1.2rem;
+}
+
+.rules-disclaimer {
+    margin-top: 20px !important;
+    font-size: 0.85rem !important;
+    color: var(--text-muted) !important;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .rules-title {
+        font-size: 1.8rem;
+    }
+    
+    .rules-section {
+        padding: 24px;
+    }
+    
+    .rules-section-title {
+        font-size: 1.3rem;
+    }
+    
+    .penalty-row {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 8px;
+    }
+    
+    .penalty-sanction {
+        text-align: center;
+    }
+    
+    .contact-links {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .contact-link {
+        width: 100%;
+        max-width: 280px;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}

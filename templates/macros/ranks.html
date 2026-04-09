@@ -1,0 +1,71 @@
+{# ==========================================
+   МАКРОС: ОТОБРАЖЕНИЕ РАНГА (БЕЙДЖ)
+   Вызывать с "with context": {% from ... with context %}
+   ========================================== #}
+{% macro render_rank(user, show_icon=true, show_name=true) %}
+    {# Безопасное получение ранга с фоллбэком #}
+    {% set rank = RANKS.get(user.role) if RANKS and user.role in RANKS else RANKS.get('player') if RANKS else {'name': 'Игрок', 'color': '#95a5a6', 'icon': '👤'} %}
+    
+    <span class="rank-badge" 
+          style="color: {{ rank.color }}; border-color: {{ rank.color }}40; background: {{ rank.color }}10;"
+          title="Ранг: {{ rank.name }}">
+        {% if show_icon %}
+            <span class="rank-icon">{{ rank.icon }}</span>
+        {% endif %}
+        {% if show_name %}
+            <span class="rank-name">{{ rank.name }}</span>
+        {% endif %}
+    </span>
+{% endmacro %}
+
+{# ==========================================
+   МАКРОС: ОТОБРАЖЕНИЕ ФЛАГОВ (СПИСОК)
+   ========================================== #}
+{% macro render_flags(user, show_name=true) %}
+    {% if user.flags and user.flags|length > 0 and FLAGS %}
+        <div class="flags-container">
+            {% for flag_code in user.flags %}
+                {% set flag = FLAGS.get(flag_code) if flag_code in FLAGS else null %}
+                {% if flag %}
+                    <span class="flag-badge" 
+                          style="color: {{ flag.color }}; border-color: {{ flag.color }}40; background: {{ flag.color }}10;"
+                          title="{{ flag.name }}">
+                        <span class="flag-icon">{{ flag.icon }}</span>
+                        {% if show_name %}
+                            <span class="flag-name">{{ flag.name }}</span>
+                        {% endif %}
+                    </span>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endmacro %}
+
+{# ==========================================
+   МАКРОС: ПОЛНАЯ КАРТОЧКА ПОЛЬЗОВАТЕЛЯ (МИНИ)
+   ========================================== #}
+{% macro user_card_mini(user, show_stats=false) %}
+    <div class="user-card-mini">
+        <div class="user-avatar-wrapper {{ user.role }}">
+            <img src="{{ user.avatar }}" alt="{{ user.username }}" class="user-avatar" onerror="this.src='https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg'">
+            {% set is_online = (user.last_login - datetime.utcnow()) < timedelta(minutes=15) %}
+            <span class="status-indicator {{ 'online' if is_online else 'offline' }}"></span>
+        </div>
+        
+        <div class="user-info">
+            <div class="user-header">
+                <span class="username">{{ user.username }}</span>
+                {{ render_rank(user) }}
+            </div>
+            
+            {{ render_flags(user) }}
+            
+            {% if show_stats %}
+                <div class="user-stats-mini">
+                    <span class="stat">📝 {{ user.topics.count() }} тем</span>
+                    <span class="stat">💬 {{ user.posts.count() }} постов</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endmacro %}

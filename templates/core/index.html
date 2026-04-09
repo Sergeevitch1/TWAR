@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}TW-FORUM | Welcome{% endblock %}
+
+{% block content %}
+<div class="landing-grid">
+    
+    <!-- ЛЕВАЯ ЧАСТЬ -->
+    <div class="hero-content">
+        <div class="hero-badge">TW-PROJECT • FORUM ENGINE</div>
+        
+        <h1 class="hero-title">
+            Действующий форум<br>
+            <span class="highlight">v.0.1</span>
+        </h1>
+        
+        <p class="hero-description">
+            Единый коммуникационный центр для игроков TW. Здесь мы обсуждаем обновления, строим планы фракций и решаем вопросы сообщества.
+        </p>
+        
+        <div class="hero-stats">
+            <div class="stat-item">
+                <span class="stat-value">0<span class="stat-accent">+</span></span>
+                <span class="stat-label">Тем</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">0<span class="stat-accent">+</span></span>
+                <span class="stat-label">Участников</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">24<span class="stat-accent">/7</span></span>
+                <span class="stat-label">Онлайн</span>
+            </div>
+        </div>
+        
+        <div class="hero-features">
+            <div class="feature-tag">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                Steam Auth
+            </div>
+            <div class="feature-tag">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                Рейтинги
+            </div>
+            <div class="feature-tag">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                Поддержка
+            </div>
+            <div class="feature-tag">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                Ивенты
+            </div>
+        </div>
+    </div>
+
+    <!-- ПРАВАЯ ЧАСТЬ -->
+    <div class="login-wrapper">
+        <div class="login-card">
+            
+            {% if current_user.is_authenticated %}
+                <!-- ЗАЛОГИНЕН -->
+                <div class="user-status-card">
+                    <div class="user-avatar-wrapper">
+                        <img src="{{ current_user.avatar }}" alt="{{ current_user.username }}" class="user-avatar-lg" onerror="this.src='https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg'">
+                        <span class="user-online-indicator"></span>
+                    </div>
+                    
+                    <div class="user-welcome">Добро пожаловать,</div>
+                    <div class="user-name-display">{{ current_user.username }}</div>
+                    
+                    <a href="{{ url_for('forum.index') }}" class="btn-enter-forum">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                    Перейти на форум
+                    </a>
+                    
+                    <a href="{{ url_for('auth.logout') }}" class="btn-logout-card">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+                        Выйти из аккаунта
+                    </a>
+                </div>
+            {% else %}
+                <!-- НЕ ЗАЛОГИНЕН -->
+                <div class="login-card-header">
+                    <div class="login-icon-wrapper">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    </div>
+                    <h2>Добро пожаловать</h2>
+                    <p>Для доступа к форуму войдите через ваш Steam аккаунт</p>
+                </div>
+                
+                <a href="{{ url_for('auth.login_steam') }}" class="btn-steam-login">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.979 0C5.678 0 0.555 4.893 0.555 11.006c0 2.18 0.715 4.208 1.926 5.89l-0.932 3.35 4.536-1.066c1.386 0.602 2.915 0.946 4.53 0.946 6.301 0 11.424-5.131 11.424-11.244C22.439 4.893 17.316 0 11.015 0zm0 1.2c5.633 0 10.224 4.412 10.224 9.84 0 5.427-4.591 9.839-10.224 9.839-1.465 0-2.862-0.3-4.117-0.84l-2.66 0.624 0.56-2.013c-1.156-1.452-1.872-3.27-1.872-5.26 0-5.427 4.591-9.839 10.224-9.839z"/></svg>
+                    Войти через Steam
+                </a>
+                
+                <div class="login-divider">или</div>
+                
+                <div class="login-security">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    Безопасное соединение OpenID 2.0
+                </div>
+            {% endif %}
+            
+        </div>
+    </div>
+</div>
+{% endblock %}

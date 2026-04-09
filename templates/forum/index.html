@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block title %}Форум | TW-FORUM{% endblock %}
+
+{% block content %}
+<div class="forum-container">
+    
+    <!-- Хлебные крошки -->
+    <nav class="breadcrumb">
+        <a href="{{ url_for('core.index') }}" class="breadcrumb-link">Главная</a>
+        <span class="breadcrumb-separator">/</span>
+        <span class="breadcrumb-current">Форум</span>
+    </nav>
+
+    <!-- Заголовок -->
+    <div class="forum-header">
+        <h1 class="forum-title">Форум</h1>
+        <p class="forum-subtitle">Общайся, делись опытом, участвуй в жизни проекта</p>
+    </div>
+
+    <!-- Основной контент -->
+    <div class="forum-layout">
+        
+        <!-- Левая колонка: Категории -->
+        <div class="forum-main">
+            <div class="categories-list">
+                {% for category in categories %}
+                <a href="{{ url_for('forum.category', category_id=category.id) }}" class="category-card" style="--category-color: {{ category.color }}">
+                    <div class="category-icon" style="background: {{ category.color }}20; border-color: {{ category.color }}">
+                        <span class="category-emoji">{{ category.icon }}</span>
+                    </div>
+                    
+                    <div class="category-content">
+                        <h2 class="category-title">{{ category.title }}</h2>
+                        <p class="category-description">{{ category.description }}</p>
+                        
+                        <div class="category-meta">
+                            <span class="meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                {{ category.topics }} тем
+                            </span>
+                            <span class="meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                                </svg>
+                                {{ category.posts }} сообщений
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="category-last">
+                        {% if category.last_post %}
+                        <div class="last-post-info">
+                            <span class="last-post-title">{{ category.last_post.title }}</span>
+                            <span class="last-post-meta">
+                                от <strong>{{ category.last_post.author }}</strong>
+                            </span>
+                            <span class="last-post-time">{{ category.last_post.time }}</span>
+                        </div>
+                        {% else %}
+                        <span class="no-posts">Нет сообщений</span>
+                        {% endif %}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Правая колонка: Сайдбар -->
+        <aside class="forum-sidebar">
+            
+            <!-- Статистика -->
+            <div class="sidebar-card">
+                <h3 class="sidebar-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 20V10M12 20V4M6 20v-6"/>
+                    </svg>
+                    Статистика
+                </h3>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <span class="stat-number">{{ stats.total_topics }}</span>
+                        <span class="stat-label">Тем</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-number">{{ stats.total_posts }}</span>
+                        <span class="stat-label">Сообщений</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-number">{{ total_users }}</span>
+                        <span class="stat-label">Пользователей</span>
+                    </div>
+                    <div class="stat-box highlight">
+                        <span class="stat-number">{{ stats.online_now }}</span>
+                        <span class="stat-label">Онлайн</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Активные пользователи -->
+            <div class="sidebar-card">
+                <h3 class="sidebar-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    Топ пользователей
+                </h3>
+                <div class="user-list">
+                    {% for user in active_users %}
+                    <div class="user-item">
+                        <div class="user-avatar-placeholder" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+                            {{ user.username[0] }}
+                        </div>
+                        <div class="user-info">
+                            <span class="user-name">{{ user.username }}</span>
+                            <span class="user-posts">{{ user.posts }} сообщений</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Быстрые ссылки -->
+            <div class="sidebar-card">
+                <h3 class="sidebar-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                    Быстрые ссылки
+                </h3>
+                <div class="quick-links">
+                    <a href="#" class="quick-link">📌 Правила форума</a>
+                    <a href="#" class="quick-link">🔥 Популярные темы</a>
+                    <a href="#" class="quick-link"> Новые сообщения</a>
+                    <a href="#" class="quick-link">⭐ Мои темы</a>
+                </div>
+            </div>
+
+        </aside>
+    </div>
+</div>
+{% endblock %}

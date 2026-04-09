@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ Setting.get('forum_name', 'TW-FORUM') }}{% endblock %}</title>
+    
+    <!-- ✅ ПРИВАТНОСТЬ: noindex если пользователь запретил индексацию -->
+    {% if current_user.is_authenticated and not current_user.allow_search_index and request.view_args and request.view_args.get('username') == current_user.username %}
+    <meta name="robots" content="noindex, nofollow">
+    {% endif %}
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ranks.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+    
+    <!-- Theme Init Script -->
+    <script>
+        (function() {
+            const userTheme = "{{ current_user.theme if current_user.is_authenticated else 'dark' }}";
+            
+            function applyTheme(theme) {
+                document.documentElement.classList.remove('theme-dark', 'theme-light');
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('theme-dark');
+                } else if (theme === 'light') {
+                    document.documentElement.classList.add('theme-light');
+                } else if (theme === 'auto') {
+                    const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    document.documentElement.classList.add(isDark ? 'theme-dark' : 'theme-light');
+                }
+            }
+            applyTheme(userTheme);
+            if (window.matchMedia && userTheme === 'auto') {
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme('auto'));
+            }
+        })();
+    </script>
+</head>
+<body>
+    
+    {% from 'macros/ranks.html' import render_rank, render_flags, user_card_mini with context %}
+
+    <!-- Анимированный фон -->
+    <div class="bg-layer">
+        <div class="grid-overlay"></div>
+        <div class="noise-overlay"></div>
+        <canvas id="particles-canvas"></canvas>
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+        <div class="glow-orb orb-3"></div>
+    </div>
+
+    <header class="glass-header">
+        <div class="container header-inner">
+            <a href="{{ url_for('core.index') }}" class="logo">
+                <span class="logo-icon">◆</span>
+                {{ Setting.get('forum_name', 'TW-FORUM') }}
+            </a>
+            
+            <nav class="header-nav">
+                <!-- Навигация -->
+                <a href="{{ url_for('forum.index') }}" class="nav-link">Форум</a>
+                <a href="{{ url_for('forum.rules') }}" class="nav-link">Правила</a>
+                <a href="https://discord.gg/ba2rRTSNZc" target="_blank" class="nav-link">Discord</a>
+                
+                {% if current_user.is_authenticated %}
+                    <!-- ✅ КНОПКА АДМИН-ПАНЕЛИ (только для тех, у кого есть право) -->
+                    {% if can('admin.view') %}
+                    <a href="{{ url_for('admin.dashboard') }}" class="nav-link nav-admin" title="Админ-панель">
+                        <span class="admin-icon">🛡️</span>
+                        <span class="admin-text">Админка</span>
+                        <span class="admin-badge"></span>
+                    </a>
+                    {% endif %}
+                    
+                    <!-- Выпадающее меню профиля -->
+                    <div class="user-dropdown" id="userDropdown">
+                        <button class="user-dropdown-toggle" onclick="toggleUserMenu(event)">
+                            <div class="user-avatar-wrapper {{ current_user.role }}">
+                                <img src="{{ current_user.avatar }}" alt="ava" class="mini-avatar" 
+                                     onerror="this.src='https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg'">
+                                {% set is_online = (current_user.last_login - datetime.utcnow()).total_seconds() < 900 %}
+                                <span class="status-indicator {{ 'online' if is_online else 'offline' }}"></span>
+                            </div>
+                            <span class="user-pill-name">{{ current_user.username }}</span>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        
+                        <div class="user-dropdown-menu">
+                            <div class="user-dropdown-header">
+                                {{ render_rank(current_user) }}
+                                <div class="user-dropdown-flags">{{ render_flags(current_user) }}</div>
+                            </div>
+                            
+                            <!-- Пункты меню -->
+                            <a href="{{ url_for('user.my_profile') }}" class="dropdown-item">
+                                <span class="dropdown-icon">📋</span>Мой профиль
+                            </a>
+                            <a href="{{ url_for('user.my_topics') }}" class="dropdown-item">
+                                <span class="dropdown-icon">📝</span>Мои темы 
+                                {% set tc = current_user.topics|length %}
+                                {% if tc > 0 %}<span class="dropdown-badge">{{ tc }}</span>{% endif %}
+                            </a>
+                            <a href="{{ url_for('user.my_posts') }}" class="dropdown-item">
+                                <span class="dropdown-icon">💬</span>Мои сообщения 
+                                {% set pc = current_user.posts|length %}
+                                {% if pc > 0 %}<span class="dropdown-badge">{{ pc }}</span>{% endif %}
+                            </a>
+                            <a href="{{ url_for('user.bookmarks') }}" class="dropdown-item">
+                                <span class="dropdown-icon">🔖</span>Закладки
+                            </a>
+                            
+                            <!-- ✅ УВЕДОМЛЕНИЯ С БЕЙДЖЕМ -->
+                            <a href="{{ url_for('user.notifications') }}" class="dropdown-item">
+                                <span class="dropdown-icon">🔔</span>Уведомления
+                                {% if current_user.is_authenticated %}
+                                    {% set unread = get_unread_notifications() %}
+                                    {% if unread > 0 %}
+                                        <span class="dropdown-badge notification-badge" title="{{ unread }} непрочитанных">
+                                            {{ unread if unread < 100 else '99+' }}
+                                        </span>
+                                    {% endif %}
+                                {% endif %}
+                            </a>
+                            
+                            <div class="dropdown-divider"></div>
+                            
+                            <a href="{{ url_for('user.settings') }}" class="dropdown-item">
+                                <span class="dropdown-icon">⚙️</span>Настройки
+                            </a>
+                            <a href="{{ url_for('user.help') }}" class="dropdown-item">
+                                <span class="dropdown-icon">❓</span>Помощь
+                            </a>
+                            
+                            <div class="dropdown-divider"></div>
+                            
+                            <a href="{{ url_for('auth.logout') }}" class="dropdown-item logout">
+                                <span class="dropdown-icon">🚪</span>Выйти
+                            </a>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('auth.login_steam') }}" class="btn-steam-sm">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                            <path d="M11.979 0C5.678 0 0.555 4.893 0.555 11.006c0 2.18 0.715 4.208 1.926 5.89l-0.932 3.35 4.536-1.066c1.386 0.602 2.915 0.946 4.53 0.946 6.301 0 11.424-5.131 11.424-11.244C22.439 4.893 17.316 0 11.015 0z"/>
+                        </svg>
+                        Войти
+                    </a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-container">
+                    {% for category, message in messages %}
+                        <div class="flash-msg flash-{{ category }}">
+                            <span class="flash-icon">{% if category == 'success' %}✓{% elif category == 'error' %}✕{% else %}!{% endif %}</span>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="glass-footer">
+        <div class="footer-inner">
+            <div class="footer-brand">{{ Setting.get('forum_name', 'TW-FORUM') }}</div>
+            <div class="footer-links">
+                <a href="{{ url_for('forum.index') }}">Форум</a>
+                <a href="#">Правила</a>
+                <a href="#">Поддержка</a>
+                <a href="#">Discord</a>
+            </div>
+            <div class="footer-copy">© 2026 TW-PROJECT. All rights reserved.</div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/particles.js') }}"></script>
+    
+    {% block scripts %}
+    <script>
+        function toggleUserMenu(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById('userDropdown');
+            if (dropdown) dropdown.classList.toggle('active');
+        }
+        document.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('userDropdown');
+            if (dropdown && !dropdown.contains(e.target)) dropdown.classList.remove('active');
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const dropdown = document.getElementById('userDropdown');
+                if (dropdown) dropdown.classList.remove('active');
+            }
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+            const userTheme = "{{ current_user.theme if current_user.is_authenticated else 'dark' }}";
+            document.addEventListener('themeChanged', function(e) { applyTheme(e.detail.theme); });
+            function applyTheme(theme) {
+                document.documentElement.classList.remove('theme-dark', 'theme-light');
+                if (theme === 'dark') document.documentElement.classList.add('theme-dark');
+                else if (theme === 'light') document.documentElement.classList.add('theme-light');
+                else if (theme === 'auto') {
+                    const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    document.documentElement.classList.add(isDark ? 'theme-dark' : 'theme-light');
+                }
+            }
+            
+            // ✅ Авто-обновление счётчика уведомлений в шапке
+            {% if current_user.is_authenticated %}
+            function updateNotificationBadge() {
+                fetch('/user/me/notifications/count')
+                    .then(response => response.json())
+                    .then(data => {
+                        const badges = document.querySelectorAll('.notification-badge');
+                        const count = data.unread_count;
+                        
+                        badges.forEach(badge => {
+                            if (count > 0) {
+                                badge.textContent = count > 99 ? '99+' : count;
+                                badge.style.display = 'flex';
+                            } else {
+                                badge.style.display = 'none';
+                            }
+                        });
+                    })
+                    .catch(() => {});
+            }
+            
+            // Обновляем сразу и потом каждые 30 секунд
+            updateNotificationBadge();
+            setInterval(updateNotificationBadge, 30000);
+            {% endif %}
+        });
+    </script>
+    
+    <!-- ✅ Стили для бейджа уведомлений и админ-кнопки -->
+    <style>
+        .notification-badge {
+            background: #ff4757 !important;
+            color: white !important;
+            min-width: 20px;
+            height: 20px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4); }
+            50% { box-shadow: 0 0 0 6px rgba(255, 71, 87, 0); }
+        }
+        
+        /* 🔐 СТИЛИ АДМИН-КНОПКИ */
+        .nav-admin {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.15) 0%, rgba(192, 57, 43, 0.1) 100%);
+            border: 1px solid rgba(231, 76, 60, 0.4);
+            border-radius: 10px;
+            color: #e74c3c;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            margin-right: 8px;
+        }
+        
+        .nav-admin:hover {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.25) 0%, rgba(192, 57, 43, 0.2) 100%);
+            border-color: #e74c3c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+        }
+        
+        .admin-icon {
+            font-size: 1.1rem;
+            animation: pulse-admin 3s ease-in-out infinite;
+        }
+        
+        .admin-text {
+            display: inline;
+        }
+        
+        .admin-badge {
+            width: 8px;
+            height: 8px;
+            background: #e74c3c;
+            border-radius: 50%;
+            animation: blink 2s infinite;
+        }
+        
+        @keyframes pulse-admin {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.1); }
+        }
+        
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.4; }
+        }
+        
+        /* Скрываем текст на мобильных, оставляем иконку */
+        @media (max-width: 1024px) {
+            .admin-text {
+                display: none;
+            }
+            .nav-admin {
+                padding: 8px;
+                margin-right: 4px;
+            }
+        }
+    </style>
+    {% endblock %}
+</body>
+</html>

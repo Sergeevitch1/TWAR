@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Закладки | Профиль{% endblock %}
+{% block content %}
+<div class="user-page-container">
+    <nav class="breadcrumb"><a href="{{ url_for('user.my_profile') }}">Профиль</a> / <span>Закладки</span></nav>
+    <div class="page-header"><h1>🔖 Закладки</h1></div>
+    <div class="empty-state">
+        <div class="empty-icon">📌</div>
+        <h3>Пока пусто</h3>
+        <p>Добавляйте интересные темы в закладки, чтобы не потерять их.</p>
+    </div>
+</div>
+{% endblock %}

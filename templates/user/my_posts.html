@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Мои сообщения | Профиль{% endblock %}
+
+{% block content %}
+<div class="user-page-container">
+    <nav class="breadcrumb">
+        <a href="{{ url_for('user.my_profile') }}">Профиль</a>
+        <span class="breadcrumb-separator">/</span>
+        <span class="breadcrumb-current">Мои сообщения</span>
+    </nav>
+
+    <div class="page-header">
+        <h1>💬 Мои сообщения</h1>
+        <a href="{{ url_for('forum.index') }}" class="btn btn-outline">← На форум</a>
+    </div>
+
+    {% if pagination.items %}
+    <div class="posts-history-list">
+        {% for post in pagination.items %}
+        <div class="post-history-card">
+            <div class="post-history-header">
+                <!-- ✅ FIX: убран page=(post.index // 15) + 1, так как index не передаётся -->
+                <span class="post-topic-link">📄 <a href="{{ url_for('forum.topic', topic_id=post.topic_id) }}#post-{{ post.id }}">{{ post.topic.title }}</a></span>
+                <span class="post-time">{{ post.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+            </div>
+            <div class="post-history-content">
+                {{ post.content[:200] }}{% if post.content|length > 200 %}...{% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if pagination.pages > 1 %}
+    <div class="pagination">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('user.my_posts', page=pagination.prev_num) }}" class="pagination-btn">← Назад</a>
+        {% endif %}
+        <span class="pagination-info">Страница {{ pagination.page }} из {{ pagination.pages }}</span>
+        {% if pagination.has_next %}
+        <a href="{{ url_for('user.my_posts', page=pagination.next_num) }}" class="pagination-btn">Вперёд →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">💬</div>
+        <h3>Сообщений пока нет</h3>
+        <p>Ответьте в любой теме, чтобы появиться здесь</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

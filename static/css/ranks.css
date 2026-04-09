@@ -1,0 +1,237 @@
+/* ==========================================
+   ARMA REFORGER RANK & FLAG SYSTEM STYLES
+   ========================================== */
+
+/* --- 1. RANK BADGES --- */
+
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-family: var(--font-main);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    
+    /* Цвета приходят из макроса (inline style) */
+    /* border-color, color, background-color */
+    border-width: 1px;
+    border-style: solid;
+    
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+    
+    /* Эффект тактического стекла */
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    
+    /* Тень текста для контраста */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    
+    position: relative;
+    overflow: hidden;
+}
+
+/* Эффект блика при наведении */
+.rank-badge::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transform: skewX(-20deg);
+    transition: 0.5s;
+}
+
+.rank-badge:hover::after {
+    left: 150%;
+}
+
+.rank-badge:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.2);
+    /* Динамическое свечение цветом самого ранга */
+    box-shadow: 0 4px 12px currentColor; 
+}
+
+.rank-icon {
+    font-size: 0.9em;
+    line-height: 1;
+}
+
+/* --- 2. SPECIAL RANK EFFECTS --- */
+
+/* OWNER - Золотое свечение и пульсация */
+.rank-badge[style*="color: #FFD700"] {
+    animation: ownerPulse 3s infinite ease-in-out;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+    border-width: 2px;
+}
+
+@keyframes ownerPulse {
+    0% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+    50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); }
+    100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+}
+
+/* S.OWNER - Агрессивное красное свечение */
+.rank-badge[style*="color: #e74c3c"] {
+    box-shadow: 0 0 10px rgba(231, 76, 60, 0.3);
+}
+
+/* TECH / DEV - Техническое голубое/оранжевое */
+.rank-badge[style*="color: #c0392b"], 
+.rank-badge[style*="color: #e67e22"] {
+    font-family: var(--font-mono); /* Для инженеров */
+}
+
+/* --- 3. FLAG BADGES --- */
+
+.flags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.flag-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    
+    /* Цвета из макроса */
+    border: 1px solid;
+    
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    opacity: 0.8;
+    transition: 0.2s;
+}
+
+.flag-badge:hover {
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+/* Стиль для Донатеров (Золотая рамка) */
+.flag-badge[style*="color: #d4af37"] {
+    background: rgba(212, 175, 55, 0.1);
+    border-color: #d4af37;
+    color: #d4af37;
+    box-shadow: 0 0 5px rgba(212, 175, 55, 0.1);
+}
+
+/* Стиль для Забаненных */
+.flag-badge[style*="color: #e74c3c"] {
+    text-decoration: line-through;
+    background: rgba(231, 76, 60, 0.1);
+    border-color: #e74c3c;
+    color: #e74c3c;
+}
+
+/* --- 4. USER CARD MINI --- */
+
+.user-card-mini {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    transition: var(--transition-base);
+}
+
+.user-card-mini:hover {
+    border-color: var(--border-hover);
+    background: var(--bg-card-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.user-avatar-wrapper {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+}
+
+.user-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border-color);
+    transition: 0.3s;
+}
+
+/* Статус онлайн */
+.status-indicator {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-card);
+}
+
+.status-indicator.online {
+    background: #2ecc71;
+    box-shadow: 0 0 6px #2ecc71;
+}
+
+.status-indicator.offline {
+    background: #7f8c8d;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0; /* Для ellipsis */
+}
+
+.user-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.username {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.user-stats-mini {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+/* Адаптив */
+@media (max-width: 640px) {
+    .rank-badge {
+        padding: 3px 6px;
+        font-size: 0.65rem;
+    }
+    .rank-name { display: none; } /* На мобилках только иконка */
+    .rank-icon { font-size: 1rem; }
+}

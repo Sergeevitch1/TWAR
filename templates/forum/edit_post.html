@@ -1,0 +1,615 @@
+{% extends 'base.html' %}
+
+{% block title %}Редактирование сообщения | {{ topic.title }}{% endblock %}
+
+{% block content %}
+<div class="edit-post-wrapper">
+    
+    <!-- Шапка -->
+    <div class="page-header">
+        <div class="container">
+            <nav class="breadcrumb">
+                <a href="{{ url_for('core.index') }}">Главная</a>
+                <span>/</span>
+                <a href="{{ url_for('forum.index') }}">Форум</a>
+                <span>/</span>
+                <a href="{{ url_for('forum.category', category_id=topic.category_id) }}">{{ topic.category.title }}</a>
+                <span>/</span>
+                <a href="{{ url_for('forum.topic', topic_id=topic.id) }}">{{ topic.title[:30] }}{% if topic.title|length > 30 %}...{% endif %}</a>
+                <span>/</span>
+                <span class="current">✏️ Редактирование</span>
+            </nav>
+            <h1 class="page-title">
+                <span class="title-icon">✏️</span>
+                Редактирование сообщения
+            </h1>
+        </div>
+    </div>
+
+    <div class="container page-content">
+        
+        <div class="content-card">
+            <form method="POST" class="edit-form" id="editPostForm">
+                
+                <!-- Инфо о посте -->
+                <div class="post-info">
+                    <div class="info-item">
+                        <span class="info-label">Тема:</span>
+                        <span class="info-value">{{ topic.title }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Автор:</span>
+                        <span class="info-value">{{ post.author.username }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Создано:</span>
+                        <span class="info-value">{{ post.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                    </div>
+                </div>
+
+                <!-- Содержимое поста -->
+                <div class="form-group">
+                    <label for="content">Сообщение *</label>
+                    
+                    <!-- Панель инструментов редактора -->
+                    <div class="editor-toolbar">
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('**', '**', 'жирный')" title="Жирный">
+                            <strong>B</strong>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('*', '*', 'курсив')" title="Курсив">
+                            <em>I</em>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('`', '`', 'код')" title="Код">
+                            <code>&lt;/&gt;</code>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('[', '](url)', 'ссылка')" title="Ссылка">
+                            🔗
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('```', '\n```', 'блок кода')" title="Блок кода">
+                            ⌨️
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('> ', '', 'цитата')" title="Цитата">
+                            ❝
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('- ', '', 'список')" title="Список">
+                            •
+                        </button>
+                        <div class="toolbar-divider"></div>
+                        <button type="button" class="editor-btn preview-btn" onclick="togglePreview()">
+                            👁️ Предпросмотр
+                        </button>
+                    </div>
+                    
+                    <!-- Текстовое поле -->
+                    <textarea id="content" name="content" 
+                              class="form-textarea editor-textarea"
+                              placeholder="Напишите ваше сообщение..."
+                              required>{{ post.content }}</textarea>
+                    
+                    <!-- Предпросмотр (скрыт по умолчанию) -->
+                    <div id="preview" class="preview-panel hidden">
+                        <div class="preview-header">Предпросмотр</div>
+                        <div id="previewContent" class="preview-content markdown-body"></div>
+                    </div>
+                    
+                    <small class="form-hint">
+                        💡 Поддерживается <a href="#" onclick="openMarkdownHelp(); return false;">Markdown-разметка</a>
+                    </small>
+                </div>
+
+                <!-- Кнопки действий -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        💾 Сохранить изменения
+                    </button>
+                    <a href="{{ url_for('forum.topic', topic_id=topic.id) }}#post-{{ post.id }}" class="btn btn-outline">
+                        Отмена
+                    </a>
+                    <span class="form-status" id="formStatus"></span>
+                </div>
+            </form>
+        </div>
+
+        <!-- Справка по Markdown -->
+        <div class="content-card help-card">
+            <div class="card-header">
+                <h3>📚 Справка по Markdown</h3>
+            </div>
+            <div class="card-body">
+                <div class="markdown-help-grid">
+                    <div class="help-item">
+                        <code>**текст**</code>
+                        <span>→ <strong>жирный</strong></span>
+                    </div>
+                    <div class="help-item">
+                        <code>*текст*</code>
+                        <span>→ <em>курсив</em></span>
+                    </div>
+                    <div class="help-item">
+                        <code>`код`</code>
+                        <span>→ <code>инлайн-код</code></span>
+                    </div>
+                    <div class="help-item">
+                        <code>```python\nкод\n```</code>
+                        <span>→ блок кода с подсветкой</span>
+                    </div>
+                    <div class="help-item">
+                        <code>[текст](url)</code>
+                        <span>→ <a href="#">ссылка</a></span>
+                    </div>
+                    <div class="help-item">
+                        <code>> цитата</code>
+                        <span>→ блок цитаты</span>
+                    </div>
+                    <div class="help-item">
+                        <code>- элемент</code>
+                        <span>→ маркированный список</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+/* ==========================================
+   СТИЛИ СТРАНИЦЫ РЕДАКТИРОВАНИЯ ПОСТА
+   ========================================== */
+
+.edit-post-wrapper {
+    min-height: 100vh;
+    background: var(--bg-primary);
+    padding-bottom: 60px;
+}
+
+/* Шапка */
+.page-header {
+    background: linear-gradient(135deg, var(--accent-dim) 0%, var(--bg-secondary) 100%);
+    border-bottom: 1px solid var(--border-color);
+    padding: 32px 0;
+    margin-bottom: 32px;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+}
+
+.breadcrumb a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.breadcrumb a:hover {
+    color: var(--accent);
+}
+
+.breadcrumb .current {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.page-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.title-icon { font-size: 2rem; }
+
+/* Контент */
+.page-content { max-width: 900px; }
+
+.content-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+    margin-bottom: 24px;
+}
+
+.card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--text-primary);
+}
+
+.card-body { padding: 24px; }
+
+/* Инфо о посте */
+.post-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    padding: 20px 24px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.info-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.info-value {
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Форма */
+.edit-form { padding: 24px; }
+
+.form-group { margin-bottom: 24px; }
+
+.form-group label {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.form-textarea {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    font-family: var(--font-mono);
+    resize: vertical;
+    min-height: 300px;
+    line-height: 1.5;
+    box-sizing: border-box;
+}
+
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.form-hint {
+    display: block;
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.form-hint a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+/* Редактор */
+.editor-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    flex-wrap: wrap;
+}
+
+.editor-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.editor-btn:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+.editor-btn strong, .editor-btn em, .editor-btn code {
+    font-family: inherit;
+    font-style: normal;
+}
+
+.toolbar-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border-color);
+    margin: 0 8px;
+}
+
+.preview-btn {
+    margin-left: auto;
+    font-size: 0.9rem;
+    gap: 4px;
+    width: auto;
+    padding: 0 12px;
+}
+
+.editor-textarea {
+    border-radius: 0 0 10px 10px !important;
+    border-top: none !important;
+}
+
+/* Предпросмотр */
+.preview-panel {
+    margin-top: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.preview-panel.hidden { display: none; }
+
+.preview-header {
+    padding: 10px 16px;
+    background: var(--bg-secondary);
+    font-weight: 600;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.preview-content {
+    padding: 16px;
+    min-height: 100px;
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.preview-content :first-child { margin-top: 0; }
+.preview-content :last-child { margin-bottom: 0; }
+
+/* Кнопки */
+.form-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-color);
+}
+
+.btn-lg {
+    padding: 14px 32px;
+    font-size: 1.05rem;
+}
+
+.form-status {
+    margin-left: auto;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+/* Справка по Markdown */
+.help-card { margin-top: 24px; }
+
+.markdown-help-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.help-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.help-item code {
+    background: var(--bg-card);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+}
+
+.help-item span {
+    color: var(--text-muted);
+}
+
+.help-item a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .page-title { font-size: 1.4rem; }
+    
+    .post-info {
+        grid-template-columns: 1fr;
+    }
+    
+    .editor-toolbar {
+        justify-content: flex-start;
+    }
+    
+    .preview-btn {
+        margin-left: 0;
+        width: 100%;
+        margin-top: 8px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .form-status {
+        margin-left: 0;
+        text-align: center;
+    }
+    
+    .markdown-help-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+// ==========================================
+// РЕДАКТОР И ПРЕДПРОСМОТР
+// ==========================================
+
+let formSubmitted = false;
+
+// Вставка Markdown
+function insertMarkdown(prefix, suffix, placeholder) {
+    const textarea = document.getElementById('content');
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = textarea.value.substring(start, end) || placeholder;
+    
+    const newText = textarea.value.substring(0, start) + prefix + selected + suffix + textarea.value.substring(end);
+    textarea.value = newText;
+    
+    // Установить курсор после вставленного текста
+    const newCursorPos = start + prefix.length + selected.length;
+    textarea.focus();
+    textarea.setSelectionRange(newCursorPos, newCursorPos);
+    
+    // Обновить предпросмотр если открыт
+    if (!document.getElementById('preview').classList.contains('hidden')) {
+        updatePreview();
+    }
+}
+
+// Переключение предпросмотра
+function togglePreview() {
+    const preview = document.getElementById('preview');
+    const textarea = document.getElementById('content');
+    
+    if (preview.classList.contains('hidden')) {
+        updatePreview();
+        preview.classList.remove('hidden');
+        textarea.style.display = 'none';
+    } else {
+        preview.classList.add('hidden');
+        textarea.style.display = 'block';
+        textarea.focus();
+    }
+}
+
+// Обновление предпросмотра (базовый Markdown)
+function updatePreview() {
+    const content = document.getElementById('content').value;
+    const preview = document.getElementById('previewContent');
+    
+    // Простой парсинг Markdown
+    let html = content
+        // Экранирование HTML
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        // Жирный
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        // Курсив
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        // Инлайн-код
+        .replace(/`(.+?)`/g, '<code>$1</code>')
+        // Ссылки
+        .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+        // Изображения
+        .replace(/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;">')
+        // Цитаты
+        .replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>')
+        // Заголовки
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+        // Списки
+        .replace(/^- (.+)$/gm, '<li>$1</li>')
+        // Блоки кода
+        .replace(/```(\w+)?\n([\s\S]+?)```/g, '<pre><code class="language-$1">$2</code></pre>')
+        // Переносы строк
+        .replace(/\n(?!(<|<\/))/g, '<br>');
+    
+    // Обёртка списков
+    html = html.replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>');
+    
+    preview.innerHTML = html;
+}
+
+// Справка по Markdown
+function openMarkdownHelp() {
+    const help = document.querySelector('.help-card');
+    if (help) {
+        help.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        help.style.animation = 'pulse 0.5s ease';
+        setTimeout(() => help.style.animation = '', 500);
+    }
+}
+
+// Предотвращение случайного закрытия при изменениях
+window.addEventListener('beforeunload', function(e) {
+    const originalContent = `{{ post.content | escape }}`;
+    const currentContent = document.getElementById('content').value;
+    
+    if (currentContent.trim() !== originalContent.trim() && !formSubmitted) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+    }
+});
+
+// Валидация и отправка формы
+document.getElementById('editPostForm').addEventListener('submit', function(e) {
+    const content = document.getElementById('content').value.trim();
+    const status = document.getElementById('formStatus');
+    
+    if (!content) {
+        e.preventDefault();
+        status.textContent = '⚠️ Сообщение не может быть пустым';
+        status.style.color = '#e74c3c';
+        return false;
+    }
+    
+    formSubmitted = true;
+    status.textContent = '🔄 Сохранение...';
+    status.style.color = 'var(--text-muted)';
+});
+</script>
+{% endblock %}
