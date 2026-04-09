@@ -3,3 +3,4 @@ Flask-SQLAlchemy
 Flask-Login
 requests
 gunicorn
+python-dotenv
